@@ -12,7 +12,7 @@
         android:theme="@style/Theme.WeatherChecker">
         <activity
             android:theme="@style/Theme.SplashScreen"
-            android:name=".WeatherCheckerActivity">
+            android:name=".ui.activities.WeatherCheckerActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

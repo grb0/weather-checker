@@ -1,7 +1,8 @@
-package ba.grbo.weatherchecker
+package ba.grbo.weatherchecker.ui.activities
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import ba.grbo.weatherchecker.R
 
 class WeatherCheckerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
