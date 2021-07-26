@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Weather Checker</string>
+    <string name="search_hint">Location</string>
+    <string name="reset_searcher_description">Close</string>
 </resources>

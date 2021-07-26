@@ -1,13 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.fragments.OverviewFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <TextView
+    <data>
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Sta ima" />
+        tools:context=".ui.fragments.OverviewFragment">
 
-</FrameLayout>
+        <EditText
+            android:id="@+id/location_searcher"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/border_searcher"
+            android:drawableStart="@drawable/ic_search"
+            android:drawablePadding="24dp"
+            android:ems="10"
+            android:fontFamily="@font/roboto"
+            android:hint="@string/search_hint"
+            android:importantForAutofill="no"
+            android:inputType="textPersonName"
+            android:paddingStart="14dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="45dp"
+            android:paddingBottom="14dp"
+            android:textCursorDrawable="@drawable/cursor_searcher"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/location_resetter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/ripple_reset_searcher"
+            android:contentDescription="@string/reset_searcher_description"
+            android:padding="9dp"
+            android:src="@drawable/ic_close"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="@+id/location_searcher"
+            app:layout_constraintEnd_toEndOf="@+id/location_searcher"
+            app:layout_constraintTop_toTopOf="@+id/location_searcher" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

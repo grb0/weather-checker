@@ -3,6 +3,8 @@ buildscript {
     ext.kotlin_version = "1.5.21"
     ext.timber_version = "4.7.1"
     ext.navigation_version = "2.3.5"
+    ext.keyboard_version = "3.0.0-RC3"
+    ext.kotlin_coroutines_version = "1.5.1"
     repositories {
         google()
         mavenCentral()
