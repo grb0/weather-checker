@@ -9,4 +9,5 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="navigation_bar_divier">#73BCBCBC</color>
+    <color name="navigation_bar_divier_dark">#40BCBCBC</color>
 </resources>

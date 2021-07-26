@@ -12,6 +12,10 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="android:navigationBarColor">?android:colorBackground</item>
+        <item name="android:navigationBarDividerColor" tools:targetApi="27">
+            @color/navigation_bar_divier_dark
+        </item>
     </style>
 
     <!-- Splash screen theme -->
