@@ -8,11 +8,13 @@
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/overview_constraint_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ui.fragments.OverviewFragment">
 
-        <EditText
+        <ba.grbo.weatherchecker.util.LocationSearcher
+            android:imeOptions="flagNoExtractUi"
             android:id="@+id/location_searcher"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

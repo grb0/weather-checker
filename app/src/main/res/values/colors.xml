@@ -10,6 +10,6 @@
 
     <color name="navigation_bar_divier">#73BCBCBC</color>
     <color name="navigation_bar_divier_dark">#40BCBCBC</color>
-    <color name="border">#89000000</color>
+    <color name="border">#66000000</color>
     <color name="ripple">#336200EE</color>
 </resources>

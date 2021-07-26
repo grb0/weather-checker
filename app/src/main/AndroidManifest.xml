@@ -11,8 +11,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WeatherChecker">
         <activity
+            android:name=".ui.activities.WeatherCheckerActivity"
             android:theme="@style/Theme.SplashScreen"
-            android:name=".ui.activities.WeatherCheckerActivity">
+            android:windowSoftInputMode="stateVisible">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

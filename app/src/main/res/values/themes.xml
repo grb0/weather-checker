@@ -18,6 +18,8 @@
         <item name="android:navigationBarDividerColor" tools:targetApi="27">
             @color/navigation_bar_divier
         </item>
+        <item name="colorControlActivated">@color/purple_200</item>
+        <item name="android:textColorHighlight">@color/purple_200</item>
     </style>
 
     <!-- Splash screen theme -->
