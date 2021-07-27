@@ -28,7 +28,7 @@
             android:fontFamily="@font/roboto"
             android:hint="@string/search_hint"
             android:importantForAutofill="no"
-            android:inputType="textPersonName"
+            android:inputType="text"
             android:paddingStart="14dp"
             android:paddingTop="14dp"
             android:paddingEnd="45dp"

@@ -8,7 +8,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="navigation_bar_divider">#73BCBCBC</color>
-    <color name="ripple">#336200EE</color>
-    <color name="highlight">#4D6200EE</color>
+    <color name="navigation_bar_divider">#40BCBCBC</color>
+    <color name="ripple">#66BB86FC</color>
 </resources>
