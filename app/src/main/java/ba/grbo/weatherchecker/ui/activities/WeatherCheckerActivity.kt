@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import ba.grbo.weatherchecker.R
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class WeatherCheckerActivity : AppCompatActivity() {
     var onScreenTouchedListener: ((event: MotionEvent) -> Unit)? = null
 

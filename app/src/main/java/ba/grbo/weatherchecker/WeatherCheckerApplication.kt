@@ -1,8 +1,10 @@
 package ba.grbo.weatherchecker
 
 import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
+@HiltAndroidApp
 class WeatherCheckerApplication : Application() {
     override fun onCreate() {
         super.onCreate()

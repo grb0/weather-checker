@@ -23,10 +23,14 @@ import ba.grbo.weatherchecker.ui.activities.WeatherCheckerActivity
 import ba.grbo.weatherchecker.ui.viewmodels.OverviewViewModel
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import ba.grbo.weatherchecker.util.setUp
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import java.util.*
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
+@AndroidEntryPoint
 class OverviewFragment : Fragment() {
     private val viewModel: OverviewViewModel by viewModels()
     private lateinit var binding: FragmentOverviewBinding
@@ -34,6 +38,9 @@ class OverviewFragment : Fragment() {
 
     private val fadeIn: AlphaAnimation by lazy { AlphaAnimation(0f, 1f).setUp(resources) }
     private val fadeOut: AlphaAnimation by lazy { AlphaAnimation(1f, 0f).setUp(resources) }
+
+    @Inject
+    lateinit var locale: Locale
 
     override fun onCreateView(
         inflater: LayoutInflater,
