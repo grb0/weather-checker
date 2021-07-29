@@ -51,7 +51,7 @@ dependencies {
     // endregion
 
     // region Logger
-    implementation "com.orhanobut:logger:$logger_version"
+    implementation "com.github.orhanobut:logger:$logger_version"
     // endregion
 
     // region Navigation
