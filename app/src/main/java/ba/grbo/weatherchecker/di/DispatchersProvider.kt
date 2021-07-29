@@ -11,6 +11,11 @@ import kotlinx.coroutines.Dispatchers
 @Module
 object DispatchersProvider {
     @ActivityRetainedScoped
+    @MainDispatcher
+    @Provides
+    fun provideMainDispatcher() = Dispatchers.Main
+
+    @ActivityRetainedScoped
     @IODispatcher
     @Provides
     fun provideIODispatcher() = Dispatchers.IO

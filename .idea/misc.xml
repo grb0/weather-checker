@@ -3,6 +3,16 @@
   <component name="CodeInsightWorkspaceSettings">
     <option name="optimizeImportsOnTheFly" value="true" />
   </component>
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="app/src/main/res/drawable/border_internet_missing_banner.xml" value="0.4361111111111111" />
+        <entry key="app/src/main/res/drawable/border_location_searcher.xml" value="0.4361111111111111" />
+        <entry key="app/src/main/res/layout/activity_weather_checker.xml" value="0.4401041666666667" />
+        <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.4401041666666667" />
+      </map>
+    </option>
+  </component>
   <component name="EntryPointsManager">
     <list size="1">
       <item index="0" class="java.lang.String" itemvalue="dagger.hilt.android.HiltAndroidApp" />

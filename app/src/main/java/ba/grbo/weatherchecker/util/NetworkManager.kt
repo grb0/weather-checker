@@ -79,9 +79,7 @@ class NetworkManager(
     // An improvement would be to either make delay duration longer for metered networks or
     // not to ping with metered networks at all.
     private fun CoroutineScope.keepPinging() = launch(ioDispatcher) {
-        while (isActive) {
-            this@NetworkManager.emitInternetStatusWithDelay(5000)
-        }
+        while (isActive) this@NetworkManager.emitInternetStatusWithDelay(5000)
     }
 
     // Note, onAvailable is not called when cellular is turned on if the wifi was already on,

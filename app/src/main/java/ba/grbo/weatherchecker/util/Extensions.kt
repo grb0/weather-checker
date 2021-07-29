@@ -2,6 +2,7 @@ package ba.grbo.weatherchecker.util
 
 import android.content.res.Resources
 import android.text.format.DateFormat
+import android.util.TypedValue
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import ba.grbo.weatherchecker.R
@@ -34,3 +35,9 @@ fun Long.toFormattedTime(locale: Locale): String = SimpleDateFormat.getTimeInsta
     SimpleDateFormat.SHORT,
     locale
 ).format(Date(this))
+
+fun Float.toPixels(resources: Resources) = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP,
+    this,
+    resources.displayMetrics
+)
