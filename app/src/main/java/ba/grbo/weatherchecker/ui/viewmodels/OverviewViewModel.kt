@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ba.grbo.weatherchecker.util.Constants.SEARCHER_DEBOUNCE_PERIOD
 import ba.grbo.weatherchecker.util.SingleSharedFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -12,8 +13,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class OverviewViewModel : ViewModel() {
+@HiltViewModel
+class OverviewViewModel @Inject constructor() : ViewModel() {
     private var _userInitializedUnfocus = false
     val userInitializedUnfocus: Boolean
         get() = _userInitializedUnfocus

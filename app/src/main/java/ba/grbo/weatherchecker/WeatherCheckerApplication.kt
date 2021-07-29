@@ -1,29 +1,19 @@
 package ba.grbo.weatherchecker
 
 import android.app.Application
+import ba.grbo.weatherchecker.util.CustomFormatStrategy
+import com.orhanobut.logger.AndroidLogAdapter
+import com.orhanobut.logger.Logger
 import dagger.hilt.android.HiltAndroidApp
-import timber.log.Timber
 
 @HiltAndroidApp
 class WeatherCheckerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initializeTimber()
+        initializeLogger()
     }
 
-    private fun initializeTimber() {
-        val tree: Timber.DebugTree by lazy {
-            object : Timber.DebugTree() {
-                override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-                    super.log(priority, "ba.grbo -> $tag", message, t)
-                }
-
-                override fun createStackElementTag(
-                    element: StackTraceElement
-                ) = "${super.createStackElementTag(element)} -> ${element.methodName}"
-            }
-        }
-
-        if (BuildConfig.DEBUG) Timber.plant(tree)
+    private fun initializeLogger() {
+        if (BuildConfig.DEBUG) Logger.addLogAdapter(AndroidLogAdapter(CustomFormatStrategy()))
     }
 }
