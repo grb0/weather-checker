@@ -11,7 +11,7 @@ class CustomFormatStrategy : FormatStrategy {
     private var methodCount = 1
     private val methodOffset = 5
     private val minStackOffset = 5
-    private var counter = 0
+    private var counter = 1
 
     override fun log(priority: Int, tag: String?, message: String) {
         logStrategy.log(priority, this.tag, getMessage(message))

@@ -6,6 +6,7 @@ import android.util.TypedValue
 import android.view.animation.AlphaAnimation
 import android.view.animation.LinearInterpolator
 import ba.grbo.weatherchecker.R
+import ba.grbo.weatherchecker.data.source.network.NetworkSuggestion
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import java.text.SimpleDateFormat
@@ -26,7 +27,7 @@ fun <T> SingleSharedFlow() = MutableSharedFlow<T>(
     extraBufferCapacity = 1
 )
 
-fun Long.toFormattedDate(locale: Locale):String = SimpleDateFormat(
+fun Long.toFormattedDate(locale: Locale): String = SimpleDateFormat(
     DateFormat.getBestDateTimePattern(locale, "EEEE MMMM d"),
     locale
 ).format(Date(this))
@@ -41,3 +42,5 @@ fun Float.toPixels(resources: Resources) = TypedValue.applyDimension(
     this,
     resources.displayMetrics
 )
+
+fun List<NetworkSuggestion>.toPlaces() = map(NetworkSuggestion::toPlace)

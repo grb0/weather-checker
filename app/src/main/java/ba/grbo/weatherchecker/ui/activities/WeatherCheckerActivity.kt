@@ -37,7 +37,6 @@ class WeatherCheckerActivity : AppCompatActivity() {
 
     private lateinit var bannerAnimator: BannerAnimator
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.Theme_WeatherChecker)
         super.onCreate(savedInstanceState)
