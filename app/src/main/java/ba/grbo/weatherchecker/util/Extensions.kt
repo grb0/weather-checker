@@ -1,13 +1,14 @@
 package ba.grbo.weatherchecker.util
 
+import android.content.Context
 import android.content.res.Resources
 import android.text.format.DateFormat
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.data.models.remote.locationiq.Suggestion
@@ -19,6 +20,12 @@ import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
+
+
+
+
+
+
 
 // Note: Make sure to collect from flow before any value is emitted, otherwise all values emitted
 // before collecting the flow are lost (not acknowledged).
@@ -44,6 +51,11 @@ fun Float.toPixels(resources: Resources) = TypedValue.applyDimension(
     resources.displayMetrics
 )
 
+fun Float.toDp(resources: Resources) = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP, this, resources.displayMetrics
+).roundToInt()
+
+
 fun List<Suggestion>.toPlaces() = map(Suggestion::toPlace)
 
 fun View.setCustomTopMargin(margin: Float) {
@@ -55,10 +67,7 @@ fun View.setCustomTopMargin(margin: Float) {
 }
 
 fun RecyclerView.addDivider(@DrawableRes drawableRes: Int) {
-    val divider = DividerItemDecoration(context, DividerItemDecoration.VERTICAL).apply {
-        setDrawable(ContextCompat.getDrawable(context, drawableRes)!!)
-    }
-    addItemDecoration(divider)
+    addItemDecoration(DividerItemDecoration(ContextCompat.getDrawable(context, drawableRes)!!))
 }
 
 suspend fun <T> toSourceResult(input: suspend () -> T): SourceResult<T> = try {
@@ -76,3 +85,9 @@ fun <R> Flow<R>.toSourceResult(): Flow<SourceResult<R>> = map {
 }
 
 fun List<Place>.toCoordinates() = map(Place::coordinate)
+
+fun Context.getColorFromAttribute(@AttrRes id: Int): Int {
+    val typedValue = TypedValue()
+    theme.resolveAttribute(id, typedValue, true)
+    return ContextCompat.getColor(this, typedValue.resourceId)
+}

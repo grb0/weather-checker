@@ -5,15 +5,15 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation.AnimationListener
 import android.view.animation.LinearInterpolator
 import android.widget.ImageButton
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.R
+import com.google.android.material.card.MaterialCardView
 
 class AlphaAnimator(
     locationResetter: ImageButton,
     suggestedPlaces: RecyclerView,
-    suggesterPlacesConstraintLayout: ConstraintLayout,
-    onSuggestedPlacesConstraintLayoutFadedOut: () -> Unit
+    suggestedPlacesCard: MaterialCardView,
+    onSuggestedPlacesCardFadedOut: () -> Unit
 ) {
     val locationResetter = Animation(
         locationResetter,
@@ -25,11 +25,11 @@ class AlphaAnimator(
         ::getFadeInAnimation,
         ::getFadeOutAnimation,
     )
-    val suggestedPlacesConstraintLayout = Animation(
-        suggesterPlacesConstraintLayout,
+    val suggestedPlacesCard = Animation(
+        suggestedPlacesCard,
         ::getFadeInAnimation,
         ::getFadeOutAnimation,
-        onSuggestedPlacesConstraintLayoutFadedOut
+        onSuggestedPlacesCardFadedOut
     )
 
     class Animation(
@@ -62,7 +62,7 @@ class AlphaAnimator(
         { if (view is ImageButton) view.isEnabled = false },
         {
             view.visibility = View.INVISIBLE
-            if (view is ConstraintLayout) onAnimationEnd?.invoke()
+            if (view is MaterialCardView) onAnimationEnd?.invoke()
         }
     )
 

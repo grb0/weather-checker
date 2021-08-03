@@ -28,10 +28,8 @@ class NetworkManager(
 
     private lateinit var pinger: Job
 
-    // Using SharedFlow instead of StateFlow, because shared flow waits for all collectors
-    // before emitting new values, for this use-case where we only ever have one collector at
-    // time, we might have as well used StateFlow, but this implementation is more robust in
-    // case we need it in future.
+    // Using SharedFlow instead of StateFlow, because SharedFlow waits for all collectors to
+    // consume emitted value before emitting new values.
     private val _internetStatus = MutableSharedFlow<Boolean>(replay = 1)
     val internetStatus = _internetStatus.distinctUntilChanged()
 

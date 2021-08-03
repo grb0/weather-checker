@@ -55,9 +55,9 @@ class OverviewViewModel @Inject constructor(
     val suggestedPlaces: StateFlow<List<Place>?>
         get() = _suggestedPlaces
 
-    private val _suggestedPlacesConstraintLayoutShown = MutableStateFlow(false)
-    val suggestedPlacesConstraintLayoutShown: StateFlow<Boolean>
-        get() = _suggestedPlacesConstraintLayoutShown
+    private val _suggestedPlacesCardShown = MutableStateFlow(false)
+    val suggestedPlacesCardShown: StateFlow<Boolean>
+        get() = _suggestedPlacesCardShown
 
     private val _suggestedPlacesShown = MutableStateFlow(false)
     val suggestedPlacesCShown: StateFlow<Boolean>
@@ -121,7 +121,7 @@ class OverviewViewModel @Inject constructor(
                 if (loc.isNotEmpty()) {
                     showLocationResetter()
                     if (loc.length < 3) repository.updateSuggestedPlaces(null)
-                    else if (!_suggestedPlacesConstraintLayoutShown.value) showLoadingSpinner()
+                    else if (!_suggestedPlacesCardShown.value) showLoadingSpinner()
                     delay(SEARCHER_DEBOUNCE_PERIOD)
                     if (loc.length >= 3) repository.updateSuggestedPlaces(loc, hasInternet)
                 } else {
@@ -147,13 +147,13 @@ class OverviewViewModel @Inject constructor(
     }
 
     private fun hideAndUpdateSuggestedPlaces() {
-        if (_suggestedPlacesConstraintLayoutShown.value) hideSuggestedPlacesConstraintLayout()
+        if (_suggestedPlacesCardShown.value) hideSuggestedPlacesCard()
         if (_suggestedPlacesShown.value) hideSuggestedPlaces()
         hideLoadingSpinner()
     }
 
     private fun showAndUpdateSuggestedPlaces(suggestedPlaces: List<Place>) {
-        if (!_suggestedPlacesConstraintLayoutShown.value) showSuggestedPlacesConstraintLayout()
+        if (!_suggestedPlacesCardShown.value) showSuggestedPlacesCard()
         if (!_suggestedPlacesShown.value) showSuggestedPlaces()
         hideLoadingSpinner()
         updateSuggestedPlaces(suggestedPlaces)
@@ -163,12 +163,12 @@ class OverviewViewModel @Inject constructor(
         _suggestedPlaces.value = suggestedPlaces
     }
 
-    private fun showSuggestedPlacesConstraintLayout() {
-        _suggestedPlacesConstraintLayoutShown.value = true
+    private fun showSuggestedPlacesCard() {
+        _suggestedPlacesCardShown.value = true
     }
 
-    private fun hideSuggestedPlacesConstraintLayout() {
-        _suggestedPlacesConstraintLayoutShown.value = false
+    private fun hideSuggestedPlacesCard() {
+        _suggestedPlacesCardShown.value = false
     }
 
     private fun showSuggestedPlaces() {
@@ -199,7 +199,7 @@ class OverviewViewModel @Inject constructor(
     }
 
     private fun showLoadingSpinner() {
-        if (!_suggestedPlacesConstraintLayoutShown.value) showSuggestedPlacesConstraintLayout()
+        if (!_suggestedPlacesCardShown.value) showSuggestedPlacesCard()
         _loadingSpinnerShown.value = true
     }
 

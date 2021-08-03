@@ -25,6 +25,8 @@ import ba.grbo.weatherchecker.ui.viewmodels.OverviewViewModel
 import ba.grbo.weatherchecker.util.AlphaAnimator
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import ba.grbo.weatherchecker.util.addDivider
+import ba.grbo.weatherchecker.util.getColorFromAttribute
+import ba.grbo.weatherchecker.util.toDp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -54,7 +56,7 @@ class OverviewFragment : Fragment() {
         alphaAnimator = AlphaAnimator(
             binding.locationResetter,
             binding.suggestedPlaces,
-            binding.suggestedPlacesConstraintLayout,
+            binding.suggestedPlacesCard,
             viewModel::resetSuggestedPlaces
         )
         setListeners()
@@ -64,7 +66,7 @@ class OverviewFragment : Fragment() {
 
     private fun setUpSuggestionsRecyclerView() {
         binding.suggestedPlaces.adapter = PlaceAdapter(viewModel::onSuggestedPlacesChanged)
-        addSuggestionsDivider(false)
+        addSuggestedPlacesDivider(false)
     }
 
     private fun setListeners() {
@@ -108,7 +110,7 @@ class OverviewFragment : Fragment() {
                 }
 
                 launch {
-                    suggestedPlacesConstraintLayoutShown.collect(::onSuggestedPlacesConstraintLayoutShownChanged)
+                    suggestedPlacesCardShown.collect(::onSuggestedPlacesCardShownChanged)
                 }
 
                 launch {
@@ -132,10 +134,10 @@ class OverviewFragment : Fragment() {
         }
     }
 
-    private fun onSuggestedPlacesConstraintLayoutShownChanged(suggestedPlacesConstraintLayoutShown: Boolean) {
-        if (suggestedPlacesConstraintLayoutShown) alphaAnimator.suggestedPlacesConstraintLayout.fadeIn()
-        else if (!suggestedPlacesConstraintLayoutShown && binding.suggestedPlacesConstraintLayout.visibility == View.VISIBLE) {
-            alphaAnimator.suggestedPlacesConstraintLayout.fadeOut()
+    private fun onSuggestedPlacesCardShownChanged(suggestedPlacesCardShown: Boolean) {
+        if (suggestedPlacesCardShown) alphaAnimator.suggestedPlacesCard.fadeIn()
+        else if (!suggestedPlacesCardShown && binding.suggestedPlacesCard.visibility == View.VISIBLE) {
+            alphaAnimator.suggestedPlacesCard.fadeOut()
         }
     }
 
@@ -157,18 +159,20 @@ class OverviewFragment : Fragment() {
 
     private fun onLocationSearcherFocused() {
         setOnScreenTouchedListener()
-        setSuggestionsBorder(R.drawable.border_suggestions_focused)
-        addSuggestionsDivider(true)
+        modifySuggestedPlacesCardStroke(2f.toDp(resources), R.attr.colorPrimary)
+        modifySuggestedPlacesScrollbar(requireContext().getColorFromAttribute(R.attr.colorPrimary))
+        addSuggestedPlacesDivider(true)
     }
 
     private fun onLocationSearcherUnfocused() {
         removeOnScreenTouchedListener()
-        setSuggestionsBorder(R.drawable.border_suggestions)
-        addSuggestionsDivider(false)
+        modifySuggestedPlacesCardStroke(1f.toDp(resources), android.R.attr.textColorHint)
+        modifySuggestedPlacesScrollbar(ContextCompat.getColor(requireContext(), R.color.scrollbar))
+        addSuggestedPlacesDivider(false)
         hideKeyboard()
     }
 
-    private fun addSuggestionsDivider(focused: Boolean) {
+    private fun addSuggestedPlacesDivider(focused: Boolean) {
         if (binding.suggestedPlaces.itemDecorationCount > 0) {
             for (i in 0 until binding.suggestedPlaces.itemDecorationCount) {
                 binding.suggestedPlaces.removeItemDecorationAt(i)
@@ -180,9 +184,13 @@ class OverviewFragment : Fragment() {
         )
     }
 
-    private fun setSuggestionsBorder(border: Int) {
-        binding.suggestedPlacesConstraintLayout.background =
-            ContextCompat.getDrawable(requireContext(), border)
+    private fun modifySuggestedPlacesCardStroke(width: Int, color: Int) {
+        binding.suggestedPlacesCard.strokeWidth = width
+        binding.suggestedPlacesCard.strokeColor = requireContext().getColorFromAttribute(color)
+    }
+
+    private fun modifySuggestedPlacesScrollbar(color: Int) {
+        binding.suggestedPlaces.scrollBarColor = color
     }
 
     private fun hideKeyboard() {

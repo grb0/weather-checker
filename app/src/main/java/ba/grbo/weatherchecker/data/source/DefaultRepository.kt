@@ -23,15 +23,23 @@ class DefaultRepository @Inject constructor(
         if (location == null) _suggestedPlaces.value = null
         else {
             _suggestedPlaces.value = Loading
-            _suggestedPlaces.value = if (hasInternet == true) onSourceResultArrived(
-                remoteDataSource.getSuggestions(location)
-            ) { suggestions ->
-                val places = suggestions.data.toPlaces()
-                onSourceResultArrived(localDataSource.insertPlaces(places)) {
-                    localDataSource.getPlaces(places.toCoordinates())
-                }
-            } else onSourceResultArrived(localDataSource.getPlaces(location)) { places -> places }
+            _suggestedPlaces.value = if (hasInternet == true) {
+                getSuggestedPlacesFromNetwork(location)
+            } else getSuggestedPlacesFromDatabase(location)
         }
+    }
+
+    private suspend fun getSuggestedPlacesFromNetwork(location: String): Result<List<Place>> {
+        return onSourceResultArrived(remoteDataSource.getSuggestions(location)) { suggestions ->
+            val places = suggestions.data.toPlaces()
+            onSourceResultArrived(localDataSource.insertPlaces(places)) {
+                localDataSource.getPlaces(places.toCoordinates())
+            }
+        }
+    }
+
+    private suspend fun getSuggestedPlacesFromDatabase(location: String): Result<List<Place>> {
+        return onSourceResultArrived(localDataSource.getPlaces(location)) { places -> places }
     }
 
     private suspend fun <R, T> onSourceResultArrived(
