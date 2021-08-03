@@ -8,21 +8,23 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
 import android.view.inputmethod.InputMethodManager
-import android.widget.ImageButton
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import ba.grbo.weatherchecker.R
+import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.databinding.FragmentOverviewBinding
 import ba.grbo.weatherchecker.ui.activities.WeatherCheckerActivity
+import ba.grbo.weatherchecker.ui.adapters.PlaceAdapter
 import ba.grbo.weatherchecker.ui.viewmodels.OverviewViewModel
+import ba.grbo.weatherchecker.util.AlphaAnimator
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
-import ba.grbo.weatherchecker.util.setUp
+import ba.grbo.weatherchecker.util.addDivider
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -36,8 +38,7 @@ class OverviewFragment : Fragment() {
     private lateinit var binding: FragmentOverviewBinding
     private lateinit var activity: WeatherCheckerActivity
 
-    private val fadeIn: AlphaAnimation by lazy { AlphaAnimation(0f, 1f).setUp(resources) }
-    private val fadeOut: AlphaAnimation by lazy { AlphaAnimation(1f, 0f).setUp(resources) }
+    private lateinit var alphaAnimator: AlphaAnimator
 
     @Inject
     lateinit var locale: Locale
@@ -49,9 +50,21 @@ class OverviewFragment : Fragment() {
     ): View {
         binding = FragmentOverviewBinding.inflate(inflater, container, false)
         activity = requireActivity() as WeatherCheckerActivity
+        setUpSuggestionsRecyclerView()
+        alphaAnimator = AlphaAnimator(
+            binding.locationResetter,
+            binding.suggestedPlaces,
+            binding.suggestedPlacesConstraintLayout,
+            viewModel::resetSuggestedPlaces
+        )
         setListeners()
         viewModel.collectFlows()
         return binding.root
+    }
+
+    private fun setUpSuggestionsRecyclerView() {
+        binding.suggestedPlaces.adapter = PlaceAdapter(viewModel::onSuggestedPlacesChanged)
+        addSuggestionsDivider(false)
     }
 
     private fun setListeners() {
@@ -93,17 +106,83 @@ class OverviewFragment : Fragment() {
                 launch {
                     unfocusLocationSearcher.collect { unfocusLocationSearcher() }
                 }
+
+                launch {
+                    suggestedPlacesConstraintLayoutShown.collect(::onSuggestedPlacesConstraintLayoutShownChanged)
+                }
+
+                launch {
+                    loadingSpinnerShown.collect(::onLoadingSpinnerShowChanged)
+                }
+
+                launch {
+                    suggestedPlacesCShown.collect(::onSuggestedPlacesShownChanged)
+                }
+
+                launch {
+                    suggestedPlaces.collect(::onSuggestedPlacesChanged)
+                }
+
+                launch {
+                    scrollSuggestedPlacesToTop.collect {
+                        binding.suggestedPlaces.scrollToPosition(0)
+                    }
+                }
             }
         }
     }
 
+    private fun onSuggestedPlacesConstraintLayoutShownChanged(suggestedPlacesConstraintLayoutShown: Boolean) {
+        if (suggestedPlacesConstraintLayoutShown) alphaAnimator.suggestedPlacesConstraintLayout.fadeIn()
+        else if (!suggestedPlacesConstraintLayoutShown && binding.suggestedPlacesConstraintLayout.visibility == View.VISIBLE) {
+            alphaAnimator.suggestedPlacesConstraintLayout.fadeOut()
+        }
+    }
+
+    private fun onSuggestedPlacesShownChanged(suggestedPlacesShown: Boolean) {
+        if (suggestedPlacesShown) alphaAnimator.suggestedPlaces.fadeIn()
+        else if (!suggestedPlacesShown && binding.suggestedPlaces.visibility == View.VISIBLE) {
+            alphaAnimator.suggestedPlaces.fadeOut()
+        }
+    }
+
+    private fun onLoadingSpinnerShowChanged(loadingSpinnerShown: Boolean) {
+        binding.loadingSpinnerLinearLayout.visibility = if (loadingSpinnerShown) View.VISIBLE
+        else View.INVISIBLE
+    }
+
+    private fun onSuggestedPlacesChanged(suggestedPlaces: List<Place>?) {
+        (binding.suggestedPlaces.adapter as PlaceAdapter).submitList(suggestedPlaces)
+    }
+
     private fun onLocationSearcherFocused() {
         setOnScreenTouchedListener()
+        setSuggestionsBorder(R.drawable.border_suggestions_focused)
+        addSuggestionsDivider(true)
     }
 
     private fun onLocationSearcherUnfocused() {
         removeOnScreenTouchedListener()
+        setSuggestionsBorder(R.drawable.border_suggestions)
+        addSuggestionsDivider(false)
         hideKeyboard()
+    }
+
+    private fun addSuggestionsDivider(focused: Boolean) {
+        if (binding.suggestedPlaces.itemDecorationCount > 0) {
+            for (i in 0 until binding.suggestedPlaces.itemDecorationCount) {
+                binding.suggestedPlaces.removeItemDecorationAt(i)
+            }
+        }
+        binding.suggestedPlaces.addDivider(
+            if (focused) R.drawable.divider_suggestions_focused
+            else R.drawable.divider_suggestions
+        )
+    }
+
+    private fun setSuggestionsBorder(border: Int) {
+        binding.suggestedPlacesConstraintLayout.background =
+            ContextCompat.getDrawable(requireContext(), border)
     }
 
     private fun hideKeyboard() {
@@ -122,15 +201,8 @@ class OverviewFragment : Fragment() {
 
     private fun onLocationResetterVisibilityChanged(visible: Boolean?) {
         visible?.let {
-            if (it) setAnimationListenerAndStartAnimation(
-                binding.locationResetter,
-                fadeIn,
-                true
-            ) else setAnimationListenerAndStartAnimation(
-                binding.locationResetter,
-                fadeOut,
-                false
-            )
+            if (it) alphaAnimator.locationResetter.fadeIn()
+            else alphaAnimator.locationResetter.fadeOut()
         }
     }
 
@@ -156,12 +228,17 @@ class OverviewFragment : Fragment() {
     private fun onScreenTouched(event: MotionEvent) {
         val touchPoint = Point(event.rawX.roundToInt(), event.rawY.roundToInt())
 
-        viewModel.onScreenTouched(
-            isPointInsideViewBounds(
-                binding.locationSearcher,
-                touchPoint
-            )
+        val isLocationSearcherTouched = isPointInsideViewBounds(
+            binding.locationSearcher,
+            touchPoint
         )
+
+        val isSuggestionsTouched = isPointInsideViewBounds(
+            binding.suggestedPlaces,
+            touchPoint
+        )
+
+        viewModel.onScreenTouched(isLocationSearcherTouched, isSuggestionsTouched)
     }
 
     private fun isPointInsideViewBounds(view: View, point: Point): Boolean = Rect().run {
@@ -176,46 +253,5 @@ class OverviewFragment : Fragment() {
 
         // Check if rectangle contains point
         contains(point.x, point.y)
-    }
-
-    private fun setAnimationListenerAndStartAnimation(
-        view: View,
-        animation: AlphaAnimation,
-        fadingIn: Boolean
-    ) {
-        animation.setAnimationListener(
-            getAnimationListener(
-                view,
-                fadingIn,
-                fadeIn,
-                fadeOut
-            )
-        )
-        view.startAnimation(animation)
-    }
-
-    private fun getAnimationListener(
-        view: View,
-        fadingIn: Boolean,
-        fadeIn: AlphaAnimation,
-        fadeOut: AlphaAnimation
-    ) = object : Animation.AnimationListener {
-        override fun onAnimationStart(animation: Animation?) {
-            if (!fadingIn && view is ImageButton) view.isEnabled = false
-            else if (view is ImageButton) view.isEnabled = true
-        }
-
-        override fun onAnimationEnd(animation: Animation?) {
-            if (fadingIn) {
-                view.visibility = View.VISIBLE
-                fadeIn.setAnimationListener(null)
-            } else {
-                view.visibility = View.INVISIBLE
-                fadeOut.setAnimationListener(null)
-            }
-        }
-
-        override fun onAnimationRepeat(animation: Animation?) {
-        }
     }
 }

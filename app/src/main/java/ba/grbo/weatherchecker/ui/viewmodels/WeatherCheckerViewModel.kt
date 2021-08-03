@@ -1,26 +1,16 @@
 package ba.grbo.weatherchecker.ui.viewmodels
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState.*
 import ba.grbo.weatherchecker.util.NetworkManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
-class WeatherCheckerViewModel @Inject constructor(
-    @ApplicationContext
-    context: Context, // safe as no ViewModel can outlive the application itself
-    @IODispatcher
-    private val ioDispatcher: CoroutineDispatcher
-) : ViewModel() {
-    val internetStatus = NetworkManager(context, ioDispatcher, viewModelScope).internetStatus
+class WeatherCheckerViewModel @Inject constructor(networkManager: NetworkManager) : ViewModel() {
+    val internetStatus = networkManager.internetStatus
 
     private val _internetMissingBannerAnimationState = MutableStateFlow(READY)
     val internetMissingBannerAnimationState: StateFlow<AnimationState>

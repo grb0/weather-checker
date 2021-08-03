@@ -16,7 +16,6 @@
         <ba.grbo.weatherchecker.util.LocationSearcher
             android:id="@+id/location_searcher"
             android:layout_width="0dp"
-            android:maxLength="@integer/max_length"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
@@ -29,6 +28,7 @@
             android:imeOptions="flagNoExtractUi"
             android:importantForAutofill="no"
             android:inputType="text"
+            android:maxLength="@integer/max_length"
             android:paddingStart="16.5dp"
             android:paddingTop="14dp"
             android:paddingEnd="49.5dp"
@@ -53,6 +53,53 @@
             app:layout_constraintBottom_toBottomOf="@+id/location_searcher"
             app:layout_constraintEnd_toEndOf="@+id/location_searcher"
             app:layout_constraintTop_toTopOf="@+id/location_searcher" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/suggested_places_constraint_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/border_suggestions"
+            android:visibility="invisible"
+            app:layout_constrainedHeight="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/location_searcher"
+            app:layout_constraintStart_toStartOf="@+id/location_searcher"
+            app:layout_constraintTop_toBottomOf="@+id/location_searcher"
+            app:layout_constraintVertical_bias="0.0">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/suggested_places"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:scrollbarSize="6dp"
+                android:scrollbars="vertical"
+                android:visibility="invisible"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/loading_spinner_linear_layout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:visibility="invisible"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loading_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true" />
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

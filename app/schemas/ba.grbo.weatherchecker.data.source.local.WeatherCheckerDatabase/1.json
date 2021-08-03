@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "4d18cc54ca167c20e71064b68239bf04",
+    "identityHash": "9ab79abe3aee97eda016cfb692feda22",
     "entities": [
       {
         "tableName": "places_table",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`coordinate` TEXT NOT NULL, `info` TEXT NOT NULL, `weather` TEXT, PRIMARY KEY(`coordinate`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`coordinate` TEXT NOT NULL, `info` TEXT NOT NULL, `forecast` TEXT, PRIMARY KEY(`coordinate`))",
         "fields": [
           {
             "fieldPath": "coordinate",
@@ -21,8 +21,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "weather",
-            "columnName": "weather",
+            "fieldPath": "forecast",
+            "columnName": "forecast",
             "affinity": "TEXT",
             "notNull": false
           }
@@ -40,7 +40,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4d18cc54ca167c20e71064b68239bf04')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ab79abe3aee97eda016cfb692feda22')"
     ]
   }
 }

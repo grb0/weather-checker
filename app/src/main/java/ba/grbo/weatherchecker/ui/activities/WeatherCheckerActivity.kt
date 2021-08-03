@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.marginTop
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +17,7 @@ import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState.*
 import ba.grbo.weatherchecker.util.BannerAnimator
+import ba.grbo.weatherchecker.util.setCustomTopMargin
 import ba.grbo.weatherchecker.util.toPixels
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
@@ -98,16 +100,18 @@ class WeatherCheckerActivity : AppCompatActivity() {
     private fun showInternetMissingBannerAndShrinkFragmentContainer() {
         lifecycleScope.launch(Dispatchers.IO) {
             while (!ViewCompat.isLaidOut(binding.internetMissingBanner)) delay(25)
-            if (binding.internetMissingBanner.translationY.toInt() == 0) {
-                withContext(mainDispatcher) {
-                    val height = binding.internetMissingBanner.height + 16f.toPixels(resources)
-                    binding.internetMissingBanner.translationY += height
-                    val lP = binding.navHostFragment.layoutParams
-                    lP.height = (binding.navHostFragment.height - height).roundToInt()
-                    binding.navHostFragment.layoutParams = lP
-                }
+            if (!isBannerShown()) withContext(mainDispatcher) {
+                showInternetMissingBanner()
             }
         }
+    }
+
+    private fun isBannerShown(): Boolean {
+        return binding.internetMissingBanner.marginTop == 16f.toPixels(resources).roundToInt()
+    }
+
+    private fun showInternetMissingBanner() {
+        binding.internetMissingBanner.setCustomTopMargin(16f.toPixels(resources))
     }
 
     private fun initBannerAnimator() {
@@ -115,15 +119,13 @@ class WeatherCheckerActivity : AppCompatActivity() {
             // Wait until banner is laid out so its height it ready to be read
             while (!ViewCompat.isLaidOut(binding.internetMissingBanner)) delay(25)
             bannerAnimator = BannerAnimator(
-                resources,
+                binding.internetMissingBanner,
                 BannerAnimator.DoOnEnd(
                     viewModel::onAnimated,
                     viewModel::onReverseAnimated,
                     viewModel::onAnimatingInterrupted,
                     viewModel::onReverseAnimatingInterrupted
-                ),
-                binding.internetMissingBanner,
-                binding.navHostFragment,
+                )
             )
         }
     }

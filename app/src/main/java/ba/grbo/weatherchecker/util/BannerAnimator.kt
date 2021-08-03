@@ -3,31 +3,43 @@ package ba.grbo.weatherchecker.util
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.content.res.Resources
-import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
-import androidx.fragment.app.FragmentContainerView
 import ba.grbo.weatherchecker.R
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 class BannerAnimator(
-    private val resources: Resources,
-    private val doOnEnd: DoOnEnd,
     banner: TextView,
-    fragment: FragmentContainerView,
+    private val doOnEnd: DoOnEnd,
 ) {
-    private val translationLength = banner.height + 16f.toPixels(resources)
-    private val bannerAnimator = getTranslateObjectAnimator(banner, translationLength)
-    private val fragmentAnimator = getShrinkObjectAnimator(
-        fragment,
-        fragment.height.toFloat(),
-        fragment.height - translationLength
-    )
+    // private val bannerAnimator = getTranslateObjectAnimator(banner, translationLength)
+    private val bannerAnimator = getBannerAnimator(banner)
+
+    private fun getBannerAnimator(
+        view: TextView,
+        startHeight: Float = (-34f).toPixels(view.resources),
+        endHeight: Float = 16f.toPixels(view.resources)
+    ): ObjectAnimator {
+        val layoutParams = PropertyValuesHolder.ofObject(
+            "layoutParams",
+            { fraction, _, _ ->
+                val height = startHeight + (fraction * (endHeight - startHeight))
+                view.setCustomTopMargin(height)
+                height
+            },
+            startHeight,
+            endHeight
+        )
+
+        return ObjectAnimator.ofPropertyValuesHolder(
+            view,
+            layoutParams
+        ).setUp(view.resources)
+    }
 
     suspend fun onAnimating() {
         doOnEnd(ANIMATING)
@@ -51,12 +63,10 @@ class BannerAnimator(
 
     private suspend fun start() = coroutineScope {
         launch { bannerAnimator.begin() }
-        launch { fragmentAnimator.begin() }
     }
 
     private suspend fun reverse() = coroutineScope {
         launch { bannerAnimator.reverse() }
-        launch { fragmentAnimator.reverse() }
     }
 
     @Suppress("NON_EXHAUSTIVE_WHEN")
@@ -70,40 +80,6 @@ class BannerAnimator(
                 REVERSE_ANIMATING_INTERRUPTED -> doOnEnd.onReverseAnimatingInterrupted()
             }
         }
-    }
-
-    private fun getTranslateObjectAnimator(
-        view: TextView,
-        translationLength: Float
-    ) = ObjectAnimator.ofFloat(
-        view,
-        View.TRANSLATION_Y,
-        view.translationY,
-        translationLength
-    ).setUp(resources)
-
-    private fun getShrinkObjectAnimator(
-        view: FragmentContainerView,
-        startHeight: Float,
-        endHeight: Float
-    ): ObjectAnimator {
-        val a = PropertyValuesHolder.ofObject(
-            "height",
-            { fraction, _, _ ->
-                val height = startHeight + (fraction * (endHeight - startHeight))
-                val lP = view.layoutParams
-                lP.height = height.roundToInt()
-                view.layoutParams = lP
-                height
-            },
-            startHeight,
-            endHeight
-        )
-
-        return ObjectAnimator.ofPropertyValuesHolder(
-            view,
-            a
-        ).setUp(resources)
     }
 
     private fun ObjectAnimator.setUp(resources: Resources): ObjectAnimator {

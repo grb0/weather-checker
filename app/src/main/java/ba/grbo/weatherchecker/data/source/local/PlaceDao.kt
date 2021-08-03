@@ -1,6 +1,9 @@
 package ba.grbo.weatherchecker.data.source.local
 
 import androidx.room.*
+import ba.grbo.weatherchecker.data.models.local.Coordinate
+import ba.grbo.weatherchecker.data.models.local.Place
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaceDao {
@@ -15,4 +18,16 @@ interface PlaceDao {
 
     @Query("SELECT * FROM places_table WHERE coordinate = :coordinate")
     suspend fun get(coordinate: Coordinate): Place
+
+    @Query("SELECT * FROM places_table WHERE coordinate IN (:coordinates)")
+    suspend fun get(coordinates: List<Coordinate>): List<Place>
+
+    @Query("SELECT * FROM places_table")
+    suspend fun get(): List<Place>
+
+    @Query("SELECT * FROM places_table WHERE coordinate = :coordinate")
+    fun observe(coordinate: Coordinate): Flow<Place>
+
+    @Query("SELECT * FROM places_table WHERE coordinate IN (:coordinates)")
+    fun observe(coordinates: List<Coordinate>): Flow<List<Place>>
 }

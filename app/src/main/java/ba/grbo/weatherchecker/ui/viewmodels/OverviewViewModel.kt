@@ -2,26 +2,38 @@ package ba.grbo.weatherchecker.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ba.grbo.weatherchecker.data.models.local.Place
+import ba.grbo.weatherchecker.data.source.Repository
+import ba.grbo.weatherchecker.data.source.Result.Loading
+import ba.grbo.weatherchecker.data.source.Result.SourceResult.Error
+import ba.grbo.weatherchecker.data.source.Result.SourceResult.Success
+import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.util.Constants.SEARCHER_DEBOUNCE_PERIOD
+import ba.grbo.weatherchecker.util.NetworkManager
 import ba.grbo.weatherchecker.util.SingleSharedFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class OverviewViewModel @Inject constructor() : ViewModel() {
+class OverviewViewModel @Inject constructor(
+    private val repository: Repository,
+    @IODispatcher private val ioDispatcher: CoroutineDispatcher,
+    networkManager: NetworkManager
+) : ViewModel() {
+    private val internetStatus = networkManager.internetStatus
+
     private var _userInitializedUnfocus = false
     val userInitializedUnfocus: Boolean
         get() = _userInitializedUnfocus
 
-    private val _location = MutableStateFlow<String?>(null)
+    private val location = MutableStateFlow<String?>(null)
+
+    private val locationWithInternetStatus = location.combine(internetStatus) { l, i -> l to i }
 
     private val _onLocationSearcherFocusChanged = MutableStateFlow<Boolean?>(null)
     val onLocationSearcherFocusChanged: StateFlow<Boolean?>
@@ -39,8 +51,34 @@ class OverviewViewModel @Inject constructor() : ViewModel() {
     val resetLocationSearcherText: SharedFlow<Unit>
         get() = _resetLocationSearcherText
 
+    private val _suggestedPlaces = MutableStateFlow<List<Place>?>(null)
+    val suggestedPlaces: StateFlow<List<Place>?>
+        get() = _suggestedPlaces
+
+    private val _suggestedPlacesConstraintLayoutShown = MutableStateFlow(false)
+    val suggestedPlacesConstraintLayoutShown: StateFlow<Boolean>
+        get() = _suggestedPlacesConstraintLayoutShown
+
+    private val _suggestedPlacesShown = MutableStateFlow(false)
+    val suggestedPlacesCShown: StateFlow<Boolean>
+        get() = _suggestedPlacesShown
+
+    private val _loadingSpinnerShown = MutableStateFlow(false)
+    val loadingSpinnerShown: StateFlow<Boolean>
+        get() = _loadingSpinnerShown
+
+    private val _exceptionSnackbarShown = MutableStateFlow(false)
+    val exceptionSnackbarShown: StateFlow<Boolean>
+        get() = _exceptionSnackbarShown
+
+    private val _scrollSuggestedPlacesToTop = SingleSharedFlow<Unit>()
+    val scrollSuggestedPlacesToTop: SharedFlow<Unit>
+        get() = _scrollSuggestedPlacesToTop
+
     init {
-        viewModelScope.collectLatestLocation()
+        // viewModelScope.collectLatestLocation()
+        viewModelScope.collectLatestLocationWithInternetStatus()
+        viewModelScope.collectLatestSuggestedPlaces()
     }
 
     fun onLocationSearcherFocusChanged(hasFocus: Boolean) {
@@ -48,15 +86,18 @@ class OverviewViewModel @Inject constructor() : ViewModel() {
     }
 
     fun onLocationSearcherTextChanged(location: String) {
-        this._location.value = location
+        this.location.value = location
     }
 
     fun onLocationResetterClicked() {
         _resetLocationSearcherText.tryEmit(Unit)
     }
 
-    fun onScreenTouched(isLocationSearcherTouched: Boolean) {
-        if (!isLocationSearcherTouched) requestLocationSearcherUnfocus()
+    fun onScreenTouched(
+        isLocationSearcherTouched: Boolean,
+        isSuggestionsTouched: Boolean
+    ) {
+        if (!isLocationSearcherTouched && !isSuggestionsTouched) requestLocationSearcherUnfocus()
     }
 
     fun onScreenTouchedListenerRemoved() {
@@ -73,17 +114,97 @@ class OverviewViewModel @Inject constructor() : ViewModel() {
         _unfocusLocationSearcher.tryEmit(Unit)
     }
 
-    private fun CoroutineScope.collectLatestLocation() = launch(Dispatchers.Default) {
-        _location.collectLatest {
-            it?.let {
-                if (it.isNotEmpty()) {
+    private fun CoroutineScope.collectLatestLocationWithInternetStatus() = launch(ioDispatcher) {
+        locationWithInternetStatus.collectLatest {
+            val (location, hasInternet) = it
+            location?.let { loc ->
+                if (loc.isNotEmpty()) {
                     showLocationResetter()
-                    // Other function to be invoked later, show autocomplete from db
+                    if (loc.length < 3) repository.updateSuggestedPlaces(null)
+                    else if (!_suggestedPlacesConstraintLayoutShown.value) showLoadingSpinner()
                     delay(SEARCHER_DEBOUNCE_PERIOD)
-                    // Other function to be invoked later, if not in db, resolve using geocoding
-                } else hideLocationResetter()
+                    if (loc.length >= 3) repository.updateSuggestedPlaces(loc, hasInternet)
+                } else {
+                    hideLocationResetter()
+                    repository.updateSuggestedPlaces(null)
+                }
             }
         }
+    }
+
+    private fun CoroutineScope.collectLatestSuggestedPlaces() = launch(ioDispatcher) {
+        repository.suggestedPlaces.collectLatest { suggestedPlaces ->
+            when (suggestedPlaces) {
+                null -> hideAndUpdateSuggestedPlaces()
+                is Success -> if (suggestedPlaces.data.isNotEmpty()) {
+                    showAndUpdateSuggestedPlaces(suggestedPlaces.data)
+                } else hideAndUpdateSuggestedPlaces()
+                // is Success -> showAndUpdateSuggestedPlaces(suggestedPlaces.data)
+                is Error -> notifyUserOfError(suggestedPlaces.exception)
+                is Loading -> showLoadingSpinner()
+            }
+        }
+    }
+
+    private fun hideAndUpdateSuggestedPlaces() {
+        if (_suggestedPlacesConstraintLayoutShown.value) hideSuggestedPlacesConstraintLayout()
+        if (_suggestedPlacesShown.value) hideSuggestedPlaces()
+        hideLoadingSpinner()
+    }
+
+    private fun showAndUpdateSuggestedPlaces(suggestedPlaces: List<Place>) {
+        if (!_suggestedPlacesConstraintLayoutShown.value) showSuggestedPlacesConstraintLayout()
+        if (!_suggestedPlacesShown.value) showSuggestedPlaces()
+        hideLoadingSpinner()
+        updateSuggestedPlaces(suggestedPlaces)
+    }
+
+    private fun updateSuggestedPlaces(suggestedPlaces: List<Place>?) {
+        _suggestedPlaces.value = suggestedPlaces
+    }
+
+    private fun showSuggestedPlacesConstraintLayout() {
+        _suggestedPlacesConstraintLayoutShown.value = true
+    }
+
+    private fun hideSuggestedPlacesConstraintLayout() {
+        _suggestedPlacesConstraintLayoutShown.value = false
+    }
+
+    private fun showSuggestedPlaces() {
+        _suggestedPlacesShown.value = true
+    }
+
+    private fun hideSuggestedPlaces() {
+        _suggestedPlacesShown.value = false
+    }
+
+    // According to the exception caught we can show an appropriate message
+    // For simplicity we're gonna show the same message
+    private fun notifyUserOfError(exception: Exception) {
+        hideAndUpdateSuggestedPlaces()
+        _exceptionSnackbarShown.value = true
+    }
+
+    fun onSnackbarMessageAcknowledge() {
+        _exceptionSnackbarShown.value = false
+    }
+
+    fun resetSuggestedPlaces() {
+        updateSuggestedPlaces(null)
+    }
+
+    fun onSuggestedPlacesChanged() {
+        _scrollSuggestedPlacesToTop.tryEmit(Unit)
+    }
+
+    private fun showLoadingSpinner() {
+        if (!_suggestedPlacesConstraintLayoutShown.value) showSuggestedPlacesConstraintLayout()
+        _loadingSpinnerShown.value = true
+    }
+
+    private fun hideLoadingSpinner() {
+        _loadingSpinnerShown.value = false
     }
 
     private fun showLocationResetter() {

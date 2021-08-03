@@ -16,7 +16,7 @@
         <activity
             android:name=".ui.activities.WeatherCheckerActivity"
             android:theme="@style/Theme.SplashScreen"
-            android:windowSoftInputMode="stateVisible">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

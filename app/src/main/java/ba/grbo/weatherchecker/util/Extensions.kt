@@ -3,21 +3,22 @@ package ba.grbo.weatherchecker.util
 import android.content.res.Resources
 import android.text.format.DateFormat
 import android.util.TypedValue
-import android.view.animation.AlphaAnimation
-import android.view.animation.LinearInterpolator
-import ba.grbo.weatherchecker.R
-import ba.grbo.weatherchecker.data.source.network.NetworkSuggestion
+import android.view.View
+import android.view.ViewGroup
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
+import ba.grbo.weatherchecker.data.models.local.Place
+import ba.grbo.weatherchecker.data.models.remote.locationiq.Suggestion
+import ba.grbo.weatherchecker.data.source.Result.SourceResult
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.*
-
-fun AlphaAnimation.setUp(resources: Resources): AlphaAnimation {
-    interpolator = LinearInterpolator()
-    duration = resources.getInteger(R.integer.anim_time).toLong()
-    return this
-}
-
+import kotlin.math.roundToInt
 
 // Note: Make sure to collect from flow before any value is emitted, otherwise all values emitted
 // before collecting the flow are lost (not acknowledged).
@@ -43,4 +44,35 @@ fun Float.toPixels(resources: Resources) = TypedValue.applyDimension(
     resources.displayMetrics
 )
 
-fun List<NetworkSuggestion>.toPlaces() = map(NetworkSuggestion::toPlace)
+fun List<Suggestion>.toPlaces() = map(Suggestion::toPlace)
+
+fun View.setCustomTopMargin(margin: Float) {
+    val layoutParams = layoutParams as ViewGroup.MarginLayoutParams
+    layoutParams.run {
+        topMargin = margin.roundToInt()
+    }
+    this.layoutParams = layoutParams
+}
+
+fun RecyclerView.addDivider(@DrawableRes drawableRes: Int) {
+    val divider = DividerItemDecoration(context, DividerItemDecoration.VERTICAL).apply {
+        setDrawable(ContextCompat.getDrawable(context, drawableRes)!!)
+    }
+    addItemDecoration(divider)
+}
+
+suspend fun <T> toSourceResult(input: suspend () -> T): SourceResult<T> = try {
+    SourceResult.Success(input())
+} catch (e: Exception) {
+    SourceResult.Error(e)
+}
+
+fun <R> Flow<R>.toSourceResult(): Flow<SourceResult<R>> = map {
+    try {
+        SourceResult.Success(it)
+    } catch (e: Exception) {
+        SourceResult.Error(e)
+    }
+}
+
+fun List<Place>.toCoordinates() = map(Place::coordinate)

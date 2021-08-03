@@ -21,7 +21,7 @@ enum class Country(val code: String, val flagResource: Int) {
     BOSNIA_AND_HERZEGOVINA("ba", R.drawable.ic_bosnia_and_herzegovina),
     BARBADOS("bb", R.drawable.ic_barbados),
     BANGLADESH("bd", R.drawable.ic_bangladesh),
-    BELGIUM("bd", R.drawable.ic_belgium),
+    BELGIUM("be", R.drawable.ic_belgium),
     BURKINA_FASTO("bf", R.drawable.ic_burkina_faso),
     BULGARIA("bg", R.drawable.ic_bulgaria),
     BAHRAIN("bh", R.drawable.ic_bahrain),
