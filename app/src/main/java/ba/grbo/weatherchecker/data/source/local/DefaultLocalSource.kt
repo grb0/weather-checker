@@ -94,16 +94,19 @@ class DefaultLocalSource @Inject constructor(
 
     private fun List<Place>.filterByQuery(query: String): List<Place> {
         val normalizedMap = mutableMapOf<String, Map<String, Int>>()
+        val kept = mutableSetOf<String>()
 
         forEach { normalizedMap[it.info.name] = it.info.name.normalize().split() }
 
         query.lowercase().normalize().split(' ').forEach { word ->
-            normalizedMap.forEach { (name, splittedNames) ->
-                normalizedMap[name] = splittedNames.toMutableMap().rate(word)
+            normalizedMap.run {
+                forEach { (name, splittedNames) ->
+                    this[name] = splittedNames.toMutableMap().rate(word)
+                }
+
+                filter { it.value.hasRatioOver70() }.forEach { (name, _) -> kept.add(name) }
             }
         }
-
-        val kept = normalizedMap.filter { it.value.hasRatioOver70() }
 
         return filter { it.info.name in kept }
     }
