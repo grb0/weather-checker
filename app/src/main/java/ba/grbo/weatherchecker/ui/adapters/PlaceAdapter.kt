@@ -9,32 +9,34 @@ import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.databinding.SuggestionItemBinding
 
 class PlaceAdapter(
-    private val onSuggestedPlacesChanged: () -> Unit
+    private val onSuggestedPlacesChanged: () -> Unit,
+    var rippleColor: Int
 ) : ListAdapter<Place, PlaceAdapter.PlaceHolder>(PlaceDiffCallbacks()) {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceHolder {
-        return PlaceHolder.from(parent)
+        return PlaceHolder.from(parent, rippleColor)
     }
 
     override fun onBindViewHolder(holder: PlaceHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), rippleColor)
     }
 
     class PlaceHolder private constructor(
         private val binding: SuggestionItemBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         companion object {
-            fun from(parent: ViewGroup) = PlaceHolder(
+            fun from(parent: ViewGroup, rippleColor: Int) = PlaceHolder(
                 SuggestionItemBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
-                )
+                ).apply { suggestionRippleLayout.setRippleColor(rippleColor) }
             )
         }
 
-        fun bind(place: Place) {
+        fun bind(place: Place, rippleColor: Int) {
             binding.place = place
             binding.hasInternet = false
+            binding.suggestionRippleLayout.setRippleColor(rippleColor)
             binding.executePendingBindings()
         }
     }

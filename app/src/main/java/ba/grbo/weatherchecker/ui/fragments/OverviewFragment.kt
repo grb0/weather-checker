@@ -68,7 +68,10 @@ class OverviewFragment : Fragment() {
     }
 
     private fun setUpSuggestionsRecyclerView() {
-        binding.suggestedPlaces.adapter = PlaceAdapter(viewModel::onSuggestedPlacesChanged)
+        binding.suggestedPlaces.adapter = PlaceAdapter(
+            viewModel::onSuggestedPlacesChanged,
+            requireContext().getColorFromAttribute(android.R.attr.textColorHint)
+        )
         addSuggestedPlacesDivider(false)
     }
 
@@ -177,16 +180,35 @@ class OverviewFragment : Fragment() {
 
     private fun onLocationSearcherFocused() {
         setOnScreenTouchedListener()
-        modifySuggestedPlacesCardStroke(2f.toDp(resources), R.attr.colorPrimary)
-        modifySuggestedPlacesScrollbar(requireContext().getColorFromAttribute(R.attr.colorPrimary))
+        val color = requireContext().getColorFromAttribute(R.attr.colorPrimary)
+        modifySuggestedPlacesCardStroke(2f.toDp(resources), color)
+        modifySuggestedPlacesScrollbar(color)
+        setRippleColor(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.ripple
+            )
+        )
         addSuggestedPlacesDivider(true)
+    }
+
+    @Suppress("NotifyDataSetChanged")
+    private fun setRippleColor(color: Int) {
+        (binding.suggestedPlaces.adapter as PlaceAdapter).run {
+            rippleColor = color
+            // To trigger rebind, since viewport size is changing based on whether the keyboard
+            // is shown or not cannot rely on notifyItemRangeChanged method.
+            notifyDataSetChanged()
+        }
     }
 
     private fun onLocationSearcherUnfocused() {
         removeOnScreenTouchedListener()
-        modifySuggestedPlacesCardStroke(1f.toDp(resources), android.R.attr.textColorHint)
+        val color = requireContext().getColorFromAttribute(android.R.attr.textColorHint)
+        modifySuggestedPlacesCardStroke(1f.toDp(resources), color)
         modifySuggestedPlacesScrollbar(ContextCompat.getColor(requireContext(), R.color.scrollbar))
         addSuggestedPlacesDivider(false)
+        setRippleColor(color)
         hideKeyboard()
     }
 
@@ -204,7 +226,7 @@ class OverviewFragment : Fragment() {
 
     private fun modifySuggestedPlacesCardStroke(width: Int, color: Int) {
         binding.suggestedPlacesCard.strokeWidth = width
-        binding.suggestedPlacesCard.strokeColor = requireContext().getColorFromAttribute(color)
+        binding.suggestedPlacesCard.strokeColor = color
     }
 
     private fun modifySuggestedPlacesScrollbar(color: Int) {

@@ -12,5 +12,4 @@
     <color name="ripple">#66BB86FC</color>
     <color name="highlight">#4D6200EE</color>
     <color name="scrollbar">#4DBCBCBC</color>
-    <color name="scrollbar_focused">#80BB86FC</color>
 </resources>
