@@ -179,8 +179,9 @@ class OverviewViewModel @Inject constructor(
         _suggestedPlacesShown.value = false
     }
 
-    // According to the exception caught we can show an appropriate message
-    // For simplicity we're gonna show the same message
+    // According to the exception caught we can show an appropriate message, however for
+    // simplicity we're gonna show a generic message.
+    @Suppress("UNUSED_PARAMETER")
     private fun notifyUserOfError(exception: Exception) {
         hideAndUpdateSuggestedPlaces()
         _exceptionSnackbarShown.value = true

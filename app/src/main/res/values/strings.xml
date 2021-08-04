@@ -3,4 +3,7 @@
     <string name="search_hint">Location</string>
     <string name="reset_searcher_description">Close</string>
     <string name="internet_connection_missing">Internet connection missing</string>
+
+    <string name="exception_msg">An exception occurred, if it persists restart or reinstall the app.</string>
+    <string name="exception_action_msg">OK</string>
 </resources>

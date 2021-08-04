@@ -98,7 +98,7 @@ class DefaultLocalSource @Inject constructor(
 
         forEach { normalizedMap[it.info.name] = it.info.name.normalize().split() }
 
-        query.lowercase().normalize().split(' ').forEach { word ->
+        query.normalize().split(' ').forEach { word ->
             normalizedMap.run {
                 forEach { (name, splittedNames) ->
                     this[name] = splittedNames.toMutableMap().rate(word)
@@ -131,7 +131,7 @@ class DefaultLocalSource @Inject constructor(
 
     private fun String.normalize(): String {
         return Normalizer
-            .normalize(this, Normalizer.Form.NFD)
+            .normalize(this.lowercase(), Normalizer.Form.NFD)
             .replace("[^\\p{ASCII}]".toRegex(), "")
     }
 }

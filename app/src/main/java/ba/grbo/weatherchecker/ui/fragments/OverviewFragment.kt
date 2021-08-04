@@ -9,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
@@ -27,8 +28,10 @@ import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import ba.grbo.weatherchecker.util.addDivider
 import ba.grbo.weatherchecker.util.getColorFromAttribute
 import ba.grbo.weatherchecker.util.toDp
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -130,8 +133,23 @@ class OverviewFragment : Fragment() {
                         binding.suggestedPlaces.scrollToPosition(0)
                     }
                 }
+
+                launch {
+                    exceptionSnackbarShown.collectLatest {
+                        if (it) showSnackbar(R.string.exception_msg, R.string.exception_action_msg)
+                    }
+                }
             }
         }
+    }
+
+    private fun showSnackbar(@StringRes message: Int, @StringRes actionMsg: Int) {
+        Snackbar.make(binding.overviewConstraintLayout, message, Snackbar.LENGTH_INDEFINITE).apply {
+            setAction(actionMsg) {
+                dismiss()
+                viewModel.onSnackbarMessageAcknowledge()
+            }
+        }.show()
     }
 
     private fun onSuggestedPlacesCardShownChanged(suggestedPlacesCardShown: Boolean) {
