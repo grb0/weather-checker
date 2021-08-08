@@ -113,7 +113,15 @@ class OverviewFragment : Fragment() {
             adapter = OverviewedPlaceAdapter(
                 viewModel::onOverviewedPlacesChanged,
                 viewModel.onImageLoadingError
-            )
+            ).apply {
+                // This prevents fast down scroll when dragging the first item and
+                // scroll up when we drag an item to the top
+                registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
+                    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+                        if (fromPosition == 0 || toPosition == 0) binding.overviewedPlaces.scrollToPosition(0)
+                    }
+                })
+            }
 
             addItemDecoration(
                 VerticalSpacingItemDecoration(16f.toDp(resources))
