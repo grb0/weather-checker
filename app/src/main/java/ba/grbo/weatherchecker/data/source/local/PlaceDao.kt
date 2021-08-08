@@ -25,9 +25,12 @@ interface PlaceDao {
     @Query("SELECT * FROM places_table")
     suspend fun get(): List<Place>
 
+    @Query("SELECT * FROM places_table WHERE overviewed = 1 ORDER BY overviewedPosition DESC")
+    suspend fun getOverviewed(): List<Place>
+
     @Query("SELECT * FROM places_table WHERE coordinate = :coordinate")
     fun observe(coordinate: Coordinate): Flow<Place>
 
-    @Query("SELECT * FROM places_table WHERE coordinate IN (:coordinates)")
-    fun observe(coordinates: List<Coordinate>): Flow<List<Place>>
+    @Query("SELECT * FROM places_table WHERE overviewed = 1")
+    fun observe(): Flow<List<Place>>
 }

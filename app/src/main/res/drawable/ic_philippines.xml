@@ -1,6 +1,6 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="@dimen/flag_size"
-    android:height="@dimen/flag_size"
+    android:width="@dimen/suggested_place_flag_size"
+    android:height="@dimen/suggested_place_flag_size"
     android:viewportWidth="512"
     android:viewportHeight="512">
   <path

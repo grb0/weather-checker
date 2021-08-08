@@ -1,6 +1,8 @@
 package ba.grbo.weatherchecker.ui.fragments
 
 import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.graphics.Point
 import android.graphics.Rect
 import android.os.Bundle
@@ -17,19 +19,24 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import ba.grbo.weatherchecker.R
 import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.databinding.FragmentOverviewBinding
 import ba.grbo.weatherchecker.ui.activities.WeatherCheckerActivity
-import ba.grbo.weatherchecker.ui.adapters.PlaceAdapter
+import ba.grbo.weatherchecker.ui.adapters.OverviewedPlaceAdapter
+import ba.grbo.weatherchecker.ui.adapters.SuggestedPlaceAdapter
 import ba.grbo.weatherchecker.ui.viewmodels.OverviewViewModel
-import ba.grbo.weatherchecker.util.AlphaAnimator
+import ba.grbo.weatherchecker.util.*
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
-import ba.grbo.weatherchecker.util.addDivider
-import ba.grbo.weatherchecker.util.getColorFromAttribute
-import ba.grbo.weatherchecker.util.toDp
+import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
+import com.orhanobut.logger.Logger
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -53,13 +60,30 @@ class OverviewFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentOverviewBinding.inflate(inflater, container, false)
+        binding = FragmentOverviewBinding.inflate(inflater, container, false).apply {
+            locationSearcher.setHintTextColor(
+                ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_enabled),
+                        intArrayOf(-android.R.attr.state_enabled)
+                    ),
+                    intArrayOf(
+                        requireContext().getColorFromAttribute(android.R.attr.textColorHint),
+                        ContextCompat.getColor(requireContext(), R.color.disabled)
+                    )
+                )
+            )
+        }
         activity = requireActivity() as WeatherCheckerActivity
-        setUpSuggestionsRecyclerView()
+        setUpOverviewedPlacesRecyclerView()
+        setUpSuggestedPlacesRecyclerView()
         alphaAnimator = AlphaAnimator(
             binding.locationResetter,
             binding.suggestedPlaces,
             binding.suggestedPlacesCard,
+            binding.overviewedPlacesCard,
+            binding.emptySuggestedPlaces,
+            binding.emptyOverviewedPlaces,
             viewModel::resetSuggestedPlaces
         )
         setListeners()
@@ -67,9 +91,116 @@ class OverviewFragment : Fragment() {
         return binding.root
     }
 
-    private fun setUpSuggestionsRecyclerView() {
-        binding.suggestedPlaces.adapter = PlaceAdapter(
+    private fun setUpOverviewedPlacesRecyclerView() {
+        binding.overviewedPlaces.run {
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    val verticalOffset = recyclerView.computeVerticalScrollOffset()
+                        .toFloat()
+                        .toDp(resources)
+                    viewModel.onOverviewedPlacesScrolled(verticalOffset)
+                    super.onScrolled(recyclerView, dx, dy)
+                }
+            })
+
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
+            val itemTouchHelper = ItemTouchHelper(getSimpleCallback())
+            itemTouchHelper.attachToRecyclerView(this)
+
+            computeVerticalScrollOffset()
+
+            adapter = OverviewedPlaceAdapter(
+                viewModel::onOverviewedPlacesChanged,
+                viewModel.onImageLoadingError
+            )
+
+            addItemDecoration(
+                VerticalSpacingItemDecoration(16f.toDp(resources))
+            )
+        }
+    }
+
+    private fun getSimpleCallback(): SimpleCallback = object : SimpleCallback(
+        ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.START or ItemTouchHelper.END,
+        ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT
+    ) {
+        var startFromPosition: Int? = null
+        var endToPosition: Int? = null
+        var lastActionState: Int = Int.MAX_VALUE
+
+        override fun onMove(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            target: RecyclerView.ViewHolder
+        ): Boolean {
+            val fromPosition = viewHolder.adapterPosition
+            val toPosition = target.adapterPosition.also { endToPosition = it }
+            // Manually notify adapter of moved items, since the list won't update on moving, since
+            // it doesn't work well
+            (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).run {
+                val current = currentList.toMutableList()
+                Collections.swap(current, fromPosition, toPosition)
+                submitList(current)
+            }
+            return true
+        }
+
+        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+            viewModel.onOverviewedPlacesSwiped(viewHolder.adapterPosition)
+        }
+
+        override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+            super.onSelectedChanged(viewHolder, actionState)
+            when (actionState) {
+                ItemTouchHelper.ACTION_STATE_DRAG -> {
+                    startFromPosition = viewHolder?.adapterPosition
+                    lastActionState = ItemTouchHelper.ACTION_STATE_DRAG
+                    Logger.i("dragging")
+                }
+                ItemTouchHelper.ACTION_STATE_SWIPE -> {
+                    lastActionState = ItemTouchHelper.ACTION_STATE_SWIPE
+                    Logger.i("swapping")
+                }
+                ItemTouchHelper.ACTION_STATE_IDLE -> {
+                    if (lastActionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                        startFromPosition?.let { from ->
+                            endToPosition?.let { to ->
+                                viewModel.onOverviewedPlacesMoved(from, to)
+                            }
+                        }
+                        Logger.i("done")
+                    }
+                }
+            }
+        }
+
+        override fun onChildDraw(
+            c: Canvas,
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder,
+            dX: Float,
+            dY: Float,
+            actionState: Int,
+            isCurrentlyActive: Boolean
+        ) {
+
+            RecyclerViewSwipeDecorator(
+                c,
+                recyclerView,
+                viewHolder,
+                dX,
+                actionState
+            ).decorate()
+
+            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+        }
+    }
+
+    private fun setUpSuggestedPlacesRecyclerView() {
+        binding.suggestedPlaces.adapter = SuggestedPlaceAdapter(
             viewModel::onSuggestedPlacesChanged,
+            viewModel::onSuggestedPlaceClicked,
             requireContext().getColorFromAttribute(android.R.attr.textColorHint)
         )
         addSuggestedPlacesDivider(false)
@@ -95,6 +226,10 @@ class OverviewFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
+                    locationSearcherEnabled.collect(::onLocationSearchedEnabledChanged)
+                }
+
+                launch {
                     onLocationSearcherFocusChanged.collect {
                         it?.let { hasFocus ->
                             if (hasFocus) onLocationSearcherFocused()
@@ -112,6 +247,12 @@ class OverviewFragment : Fragment() {
                 launch { resetLocationSearcherText.collect { resetLocationSearcherText() } }
 
                 launch {
+                    clearLocationSearcherFocus.collect {
+                        binding.locationSearcher.clearFocus()
+                    }
+                }
+
+                launch {
                     unfocusLocationSearcher.collect { unfocusLocationSearcher() }
                 }
 
@@ -120,7 +261,11 @@ class OverviewFragment : Fragment() {
                 }
 
                 launch {
-                    loadingSpinnerShown.collect(::onLoadingSpinnerShowChanged)
+                    suggestedPlacesLoadingSpinnerShown.collect(::onSuggestedPlacesLoadingSpinnerShownChanged)
+                }
+
+                launch {
+                    overviewedPlacesLoadingSpinnerShown.collect(::onOverviewedPlacesLoadingSpinnerShownChanged)
                 }
 
                 launch {
@@ -128,7 +273,22 @@ class OverviewFragment : Fragment() {
                 }
 
                 launch {
+                    overviewedPlaces.collect(::onOverviewedPlacesChanged)
+                }
+
+                launch {
                     suggestedPlaces.collect(::onSuggestedPlacesChanged)
+                }
+
+                launch {
+                    scrollOverviewedPlacesToTop.collect {
+                        if (!binding.overviewedPlaces.canScrollVertically(-1)) {
+                            binding.overviewedPlaces.scrollToPosition(0)
+                        } else lifecycleScope.launch {
+                            delay(300) // To make it more natural
+                            binding.overviewedPlaces.smoothScrollToPosition(0)
+                        }
+                    }
                 }
 
                 launch {
@@ -139,43 +299,185 @@ class OverviewFragment : Fragment() {
 
                 launch {
                     exceptionSnackbarShown.collectLatest {
-                        if (it) showSnackbar(R.string.exception_msg, R.string.exception_action_msg)
+                        if (it) showSnackbar(
+                            R.string.exception_msg,
+                            R.string.exception_action_msg
+                        ) {
+                            viewModel.onExceptionSnackbarMessageAcknowledge()
+                        }
                     }
+                }
+
+                launch {
+                    undoRemovedOverviewedPlaceSnackbackShown.collectLatest { message ->
+                        message?.let {
+                            showUndoSnackbar(
+                                getString(R.string.undo_msg, it),
+                                R.string.undo_action_msg
+                            )
+                        }
+                    }
+                }
+
+                launch {
+                    blinkInternetMissingBanner.collect { activity.blinkBanner() }
+                }
+
+                launch {
+                    overviewedPlacesCardShown.collect(::onOverviewedPlacesCardShownChanged)
+                }
+
+                launch {
+                    emptyOverviewedPlacesInfoShown.collect(::onEmptyOverviewedPlacesInfoShownChanged)
+                }
+
+                launch {
+                    emptySuggestedPlacesInfoShown.collect(::onEmptySuggestedPlacesInfoShownChanged)
+                }
+
+                launch {
+                    verticalDividerShown.collect(::onVerticalDividerShownChanged)
                 }
             }
         }
     }
 
-    private fun showSnackbar(@StringRes message: Int, @StringRes actionMsg: Int) {
-        Snackbar.make(binding.overviewConstraintLayout, message, Snackbar.LENGTH_INDEFINITE).apply {
-            setAction(actionMsg) {
-                dismiss()
-                viewModel.onSnackbarMessageAcknowledge()
+    private fun onVerticalDividerShownChanged(verticalDividerShown: Boolean?) {
+        verticalDividerShown?.let {
+            binding.verticalDivider.visibility = if (it) View.VISIBLE else View.INVISIBLE
+        }
+    }
+
+    private fun onViewShownChanged(
+        shown: Boolean,
+        fadeIn: () -> Unit,
+        fadeOut: () -> Unit
+    ) = if (shown) fadeIn() else fadeOut()
+
+    private fun onLocationSearchedEnabledChanged(locationSearcherShown: Boolean?) {
+        locationSearcherShown?.let { binding.locationSearcher.isEnabled = it }
+    }
+
+    private fun onEmptySuggestedPlacesInfoShownChanged(emptyInfoShown: Boolean?) {
+        emptyInfoShown?.let {
+            onViewShownChanged(
+                emptyInfoShown,
+                alphaAnimator.emptySuggestedPlacesInfo::fadeIn,
+                alphaAnimator.emptySuggestedPlacesInfo::fadeOut
+            )
+        }
+    }
+
+    private fun onEmptyOverviewedPlacesInfoShownChanged(emptyInfoShown: Boolean?) {
+        emptyInfoShown?.let {
+            onViewShownChanged(
+                emptyInfoShown,
+                alphaAnimator.emptyOverviewedPlacesInfo::fadeIn,
+                alphaAnimator.emptyOverviewedPlacesInfo::fadeOut
+            )
+        }
+    }
+
+    private fun onOverviewedPlacesCardShownChanged(overviewedPlacesCardShown: Boolean?) {
+        overviewedPlacesCardShown?.let {
+            onViewShownChanged(
+                overviewedPlacesCardShown,
+                alphaAnimator.overviewedPlacesCard::fadeIn,
+                alphaAnimator.overviewedPlacesCard::fadeOut
+            )
+        }
+    }
+
+    private fun onSuggestedPlacesCardShownChanged(suggestedPlacesCardShown: Boolean?) {
+        suggestedPlacesCardShown?.let {
+            onViewShownChanged(
+                suggestedPlacesCardShown,
+                alphaAnimator.suggestedPlacesCard::fadeIn,
+                alphaAnimator.suggestedPlacesCard::fadeOut
+            )
+        }
+    }
+
+    private fun onSuggestedPlacesShownChanged(suggestedPlacesShown: Boolean?) {
+        suggestedPlacesShown?.let {
+            onViewShownChanged(
+                suggestedPlacesShown,
+                alphaAnimator.suggestedPlaces::fadeIn,
+                alphaAnimator.suggestedPlaces::fadeOut
+            )
+        }
+    }
+
+    private fun showSnackbar(
+        @StringRes message: Int,
+        @StringRes actionMsg: Int,
+        onActionClicked: () -> Unit
+    ) {
+        Snackbar.make(binding.overviewConstraintLayout, message, Snackbar.LENGTH_INDEFINITE)
+            .apply {
+                setAction(actionMsg) {
+                    dismiss()
+                    onActionClicked()
+                }
+
+            }.show()
+    }
+
+    private fun showUndoSnackbar(
+        message: String,
+        @StringRes actionMsg: Int
+    ) {
+        Snackbar.make(binding.overviewConstraintLayout, message, Snackbar.LENGTH_LONG)
+            .apply {
+                setAction(actionMsg) {
+                    viewModel.onUndoRemovedOverviewedPlace()
+                }
+                addCallback(object : BaseTransientBottomBar.BaseCallback<Snackbar?>() {
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        viewModel.onUndoSnackbarDismissed()
+                        super.onDismissed(transientBottomBar, event)
+                    }
+                })
             }
-        }.show()
+            .show()
     }
 
-    private fun onSuggestedPlacesCardShownChanged(suggestedPlacesCardShown: Boolean) {
-        if (suggestedPlacesCardShown) alphaAnimator.suggestedPlacesCard.fadeIn()
-        else if (!suggestedPlacesCardShown && binding.suggestedPlacesCard.visibility == View.VISIBLE) {
-            alphaAnimator.suggestedPlacesCard.fadeOut()
+    private fun onSuggestedPlacesLoadingSpinnerShownChanged(loadingSpinnerShown: Boolean?) {
+        loadingSpinnerShown?.let {
+            onLoadingSpinnerShownChanged(
+                binding.suggestedPlacesLoadingSpinner,
+                loadingSpinnerShown
+            )
         }
     }
 
-    private fun onSuggestedPlacesShownChanged(suggestedPlacesShown: Boolean) {
-        if (suggestedPlacesShown) alphaAnimator.suggestedPlaces.fadeIn()
-        else if (!suggestedPlacesShown && binding.suggestedPlaces.visibility == View.VISIBLE) {
-            alphaAnimator.suggestedPlaces.fadeOut()
+    private fun onOverviewedPlacesLoadingSpinnerShownChanged(loadingSpinnerShown: Boolean?) {
+        loadingSpinnerShown?.let {
+            onLoadingSpinnerShownChanged(
+                binding.overviewedPlacesLoadingSpinner,
+                loadingSpinnerShown
+            )
         }
     }
 
-    private fun onLoadingSpinnerShowChanged(loadingSpinnerShown: Boolean) {
-        binding.loadingSpinnerLinearLayout.visibility = if (loadingSpinnerShown) View.VISIBLE
-        else View.INVISIBLE
+    private fun onLoadingSpinnerShownChanged(view: View, loadingSpinnerShown: Boolean) {
+        view.visibility = if (loadingSpinnerShown) View.VISIBLE else View.INVISIBLE
     }
 
     private fun onSuggestedPlacesChanged(suggestedPlaces: List<Place>?) {
-        (binding.suggestedPlaces.adapter as PlaceAdapter).submitList(suggestedPlaces)
+        (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).submitList(suggestedPlaces)
+    }
+
+    private fun onOverviewedPlacesChanged(overviewedPlaces: List<Place>?) {
+        (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).submitList(overviewedPlaces)
+        // overviewedPlaces?.let {
+        //     (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).run {
+        //         // Only if the items were added or removed, does not work well if items were moved,
+        //         // docs state that diffutil performs second run to determine the moved items but
+        //         // it doesn't work well paired with draging and droping items (moving them around).
+        //         if (currentList.size != overviewedPlaces.size) submitList(overviewedPlaces)
+        //     }
+        // }
     }
 
     private fun onLocationSearcherFocused() {
@@ -194,7 +496,7 @@ class OverviewFragment : Fragment() {
 
     @Suppress("NotifyDataSetChanged")
     private fun setRippleColor(color: Int) {
-        (binding.suggestedPlaces.adapter as PlaceAdapter).run {
+        (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).run {
             rippleColor = color
             // To trigger rebind, since viewport size is changing based on whether the keyboard
             // is shown or not cannot rely on notifyItemRangeChanged method.
@@ -206,7 +508,12 @@ class OverviewFragment : Fragment() {
         removeOnScreenTouchedListener()
         val color = requireContext().getColorFromAttribute(android.R.attr.textColorHint)
         modifySuggestedPlacesCardStroke(1f.toDp(resources), color)
-        modifySuggestedPlacesScrollbar(ContextCompat.getColor(requireContext(), R.color.scrollbar))
+        modifySuggestedPlacesScrollbar(
+            ContextCompat.getColor(
+                requireContext(),
+                R.color.scrollbar
+            )
+        )
         addSuggestedPlacesDivider(false)
         setRippleColor(color)
         hideKeyboard()

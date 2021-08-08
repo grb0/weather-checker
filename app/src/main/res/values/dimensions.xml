@@ -2,5 +2,9 @@
 <resources>
     <dimen name="logo_size">200dp</dimen>
     <dimen name="reset_searcher_ripple">20dp</dimen>
-    <dimen name="flag_size">24dp</dimen>
+    <dimen name="suggested_place_flag_size">24dp</dimen>
+    <dimen name="overviewed_place_flag_size">24dp</dimen>
+    <dimen name="overviewed_place_weather_icon_size">24dp</dimen>
+    <dimen name="empty_icon_size">140dp</dimen>
+    <dimen name="empty_search_icon_size">60dp</dimen>
 </resources>

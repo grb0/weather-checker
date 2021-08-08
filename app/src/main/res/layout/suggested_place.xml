@@ -17,12 +17,12 @@
     </data>
 
     <com.balysv.materialripple.MaterialRippleLayout
-        android:id="@+id/suggestion_ripple_layout"
+        android:id="@+id/suggested_place_ripple_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <TextView
-            android:id="@+id/suggestion"
+            android:id="@+id/suggested_place"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:drawablePadding="24dp"

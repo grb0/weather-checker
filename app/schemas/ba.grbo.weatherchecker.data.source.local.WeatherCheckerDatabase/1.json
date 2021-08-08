@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9ab79abe3aee97eda016cfb692feda22",
+    "identityHash": "01937d488093e669312ed3e8fe6fa80f",
     "entities": [
       {
         "tableName": "places_table",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`coordinate` TEXT NOT NULL, `info` TEXT NOT NULL, `forecast` TEXT, PRIMARY KEY(`coordinate`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`coordinate` TEXT NOT NULL, `info` TEXT NOT NULL, `forecast` TEXT, `overviewed` INTEGER NOT NULL, `overviewedPosition` INTEGER, PRIMARY KEY(`coordinate`))",
         "fields": [
           {
             "fieldPath": "coordinate",
@@ -25,6 +25,18 @@
             "columnName": "forecast",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "overviewed",
+            "columnName": "overviewed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overviewedPosition",
+            "columnName": "overviewedPosition",
+            "affinity": "INTEGER",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -40,7 +52,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ab79abe3aee97eda016cfb692feda22')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '01937d488093e669312ed3e8fe6fa80f')"
     ]
   }
 }

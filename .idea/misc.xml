@@ -71,6 +71,7 @@
         <entry key="app/src/main/res/drawable/ic_curacao.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_czech_republic.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_database.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/drawable/ic_delete.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_democratic_republic_of_the_congo.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_denmark.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_djibouti.xml" value="0.3925925925925926" />
@@ -80,6 +81,8 @@
         <entry key="app/src/main/res/drawable/ic_egypt.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_el_salvador.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_empty.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/drawable/ic_empty_document.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/drawable/ic_empty_search.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_equatorial_guinea.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_eritrea.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_estonia.xml" value="0.3925925925925926" />
@@ -137,6 +140,7 @@
         <entry key="app/src/main/res/drawable/ic_libya.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_liechtenstein.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_lithuania.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/drawable/ic_loading.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_logo.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_luxembourg.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_macao.xml" value="0.3925925925925926" />
@@ -249,13 +253,16 @@
         <entry key="app/src/main/res/drawable/ic_vanuatu.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_venezuela.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_vietnam.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/drawable/ic_void.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_yemen.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_zambia.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/ic_zimbabwe.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/scrollbar_suggested_places.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/scrollbar_suggested_places_f.xml" value="0.3925925925925926" />
-        <entry key="app/src/main/res/layout/activity_weather_checker.xml" value="0.6510015408320493" />
-        <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.4401041666666667" />
+        <entry key="app/src/main/res/layout/activity_weather_checker.xml" value="0.34444444444444444" />
+        <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.34444444444444444" />
+        <entry key="app/src/main/res/layout/overviewed_place.xml" value="0.4401041666666667" />
+        <entry key="app/src/main/res/layout/suggested_place.xml" value="0.793063583815029" />
         <entry key="app/src/main/res/layout/suggestion_item.xml" value="0.4300578034682081" />
       </map>
     </option>

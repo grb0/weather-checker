@@ -4,6 +4,8 @@ import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.content.res.Resources
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
 import ba.grbo.weatherchecker.R
@@ -13,16 +15,23 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class BannerAnimator(
-    banner: TextView,
+    private val banner: TextView,
     private val doOnEnd: DoOnEnd,
 ) {
-    // private val bannerAnimator = getTranslateObjectAnimator(banner, translationLength)
     private val bannerAnimator = getBannerAnimator(banner)
+    private val blinkAnimation = AlphaAnimation(1f, 0f).apply {
+        duration = 50
+        repeatMode = Animation.REVERSE
+        repeatCount = 3
+        startOffset = 20
+    }
 
+    // 15.999 and 34.001 instead of 16 and 34, because for whatever reason when banner is dismissed
+    // a small portion of its bottom border stays visible
     private fun getBannerAnimator(
         view: TextView,
-        startHeight: Float = (-34f).toPixels(view.resources),
-        endHeight: Float = 16f.toPixels(view.resources)
+        startHeight: Float = (-34.001f).toPixels(view.resources),
+        endHeight: Float = 15.999f.toPixels(view.resources)
     ): ObjectAnimator {
         val layoutParams = PropertyValuesHolder.ofObject(
             "layoutParams",
@@ -39,6 +48,10 @@ class BannerAnimator(
             view,
             layoutParams
         ).setUp(view.resources)
+    }
+
+    fun blink() {
+        banner.startAnimation(blinkAnimation)
     }
 
     suspend fun onAnimating() {

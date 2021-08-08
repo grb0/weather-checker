@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <variable
+            name="place"
+            type="ba.grbo.weatherchecker.data.models.local.Place" />
+
+        <variable
+            name="onImageLoadingError"
+            type="ba.grbo.weatherchecker.util.OnImageLoadingError" />
+    </data>
+
+    <com.balysv.materialripple.MaterialRippleLayout
+        android:id="@+id/overviewed_place_ripple_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?android:colorBackground"
+        android:foreground="@drawable/border_internet_missing_banner"
+        app:mrl_rippleColor="?android:colorPrimary">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/overviewed_place_constraint_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="16dp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/roboto"
+                android:singleLine="true"
+                android:text="@{place.info.place}"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/flag"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/flag"
+                app:layout_constraintTop_toTopOf="@+id/flag"
+                tools:text="Vogošća" />
+
+            <TextView
+                android:id="@+id/temp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/roboto"
+                android:text="@{@string/overviewed_place_temp_format(place.forecast.current.temp)}"
+                android:textSize="40sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/flag"
+                app:layout_constraintTop_toBottomOf="@+id/flag"
+                tools:text="28°C" />
+
+            <ImageView
+                android:id="@+id/weather_icon"
+                android:layout_width="@dimen/overviewed_place_weather_icon_size"
+                android:layout_height="@dimen/overviewed_place_weather_icon_size"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/weather_icon"
+                app:iconCode="@{place.forecast.current.weather.icon}"
+                app:layout_constraintStart_toEndOf="@+id/temp"
+                app:layout_constraintTop_toTopOf="@+id/temp"
+                app:onError="@{onImageLoadingError}"
+                app:srcCompat="@drawable/ic_close" />
+
+            <TextView
+                android:id="@+id/weather_description"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/roboto"
+                android:text="@{place.forecast.current.weather.description.trim()}"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/weather_icon"
+                app:layout_constraintStart_toEndOf="@+id/weather_icon"
+                app:layout_constraintTop_toTopOf="@+id/weather_icon"
+                tools:text="Clear sky" />
+
+            <ImageView
+                android:id="@+id/flag"
+                android:layout_width="@dimen/overviewed_place_flag_size"
+                android:layout_height="@dimen/overviewed_place_flag_size"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:contentDescription="@string/country_flag"
+                app:imgSrc="@{place.info.countryCodeResource}"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_close" />
+
+            <TextView
+                android:id="@+id/feels_like_temp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginBottom="4dp"
+                android:fontFamily="@font/roboto"
+                android:text="@{@string/overviewed_place_feels_like_temp_format(place.forecast.current.feelsLike)}"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/temp"
+                app:layout_constraintStart_toEndOf="@+id/temp"
+                tools:text="Feels like 34°C" />
+
+            <TextView
+                android:id="@+id/wind"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:fontFamily="@font/roboto"
+                android:text="@{@string/overviewed_place_wind_format(place.forecast.current.windSpeed)}"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/weather_description"
+                app:layout_constraintStart_toEndOf="@+id/weather_description"
+                app:layout_constraintTop_toTopOf="@+id/weather_description"
+                tools:text="Wind: 4.5m/s" />
+
+            <TextView
+                android:id="@+id/visibility"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:fontFamily="@font/roboto"
+                android:text="@{@string/overviewed_place_visibility_format(place.forecast.current.visibility / 1000)}"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/feels_like_temp"
+                app:layout_constraintStart_toEndOf="@+id/feels_like_temp"
+                app:layout_constraintTop_toTopOf="@+id/feels_like_temp"
+                tools:text="Visibility: 4.6km" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.balysv.materialripple.MaterialRippleLayout>
+</layout>

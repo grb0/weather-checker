@@ -13,12 +13,17 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.net.InetSocketAddress
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 class NetworkManager(
     context: Context,
     private val ioDispatcher: CoroutineDispatcher,
     private val scope: CoroutineScope
 ) {
+    private var _hasInternet = AtomicBoolean(false)
+    val hasInternet: Boolean
+        get() = _hasInternet.get()
+
     private lateinit var networkCallback: NetworkCallback
     private lateinit var networkRequest: NetworkRequest
 
@@ -120,7 +125,10 @@ class NetworkManager(
         }
     )
 
-    private suspend fun emitInternetStatus(hasInternet: Boolean) = _internetStatus.emit(hasInternet)
+    private suspend fun emitInternetStatus(hasInternet: Boolean) = coroutineScope {
+        launch { _internetStatus.emit(hasInternet) }
+        launch { _hasInternet.set(hasInternet) }
+    }
 
     private fun doesNetworkHaveInternet(network: Network) = try {
         val socket = network.socketFactory.createSocket()

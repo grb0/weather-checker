@@ -5,6 +5,8 @@ import android.view.animation.AlphaAnimation
 import android.view.animation.Animation.AnimationListener
 import android.view.animation.LinearInterpolator
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.R
 import com.google.android.material.card.MaterialCardView
@@ -13,6 +15,9 @@ class AlphaAnimator(
     locationResetter: ImageButton,
     suggestedPlaces: RecyclerView,
     suggestedPlacesCard: MaterialCardView,
+    overviewedPlacesCard: MaterialCardView,
+    emptySuggestedPlacesInfo: ImageView,
+    emptyOverviewedPlacesInfo: LinearLayout,
     onSuggestedPlacesCardFadedOut: () -> Unit
 ) {
     val locationResetter = Animation(
@@ -30,6 +35,21 @@ class AlphaAnimator(
         ::getFadeInAnimation,
         ::getFadeOutAnimation,
         onSuggestedPlacesCardFadedOut
+    )
+    val overviewedPlacesCard = Animation(
+        overviewedPlacesCard,
+        ::getFadeInAnimation,
+        ::getFadeOutAnimation,
+    )
+    val emptySuggestedPlacesInfo = Animation(
+        emptySuggestedPlacesInfo,
+        ::getFadeInAnimation,
+        ::getFadeOutAnimation,
+    )
+    val emptyOverviewedPlacesInfo = Animation(
+        emptyOverviewedPlacesInfo,
+        ::getFadeInAnimation,
+        ::getFadeOutAnimation,
     )
 
     class Animation(

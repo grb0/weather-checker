@@ -18,7 +18,9 @@ interface LocalSource {
 
     suspend fun getPlaces(query: String): SourceResult<List<Place>>
 
+    suspend fun getOverviewedPlaces(): SourceResult<List<Place>>
+
     fun observePlace(coordinate: Coordinate): Flow<SourceResult<Place>>
 
-    fun observePlaces(coordinates: List<Coordinate>): Flow<SourceResult<List<Place>>>
+    // fun observeOverviewedPlaces(): Flow<SourceResult<List<Place>>>
 }

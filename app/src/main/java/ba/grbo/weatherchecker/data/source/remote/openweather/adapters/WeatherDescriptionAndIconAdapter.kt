@@ -4,6 +4,7 @@ import ba.grbo.weatherchecker.data.models.remote.openweather.Weather
 import ba.grbo.weatherchecker.data.source.remote.openweather.annotations.WeatherDescriptionAndIcon
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
+import java.util.*
 
 @Suppress("UNUSED")
 object WeatherDescriptionAndIconAdapter {
@@ -13,7 +14,7 @@ object WeatherDescriptionAndIconAdapter {
     @FromJson
     @WeatherDescriptionAndIcon
     fun fromJson(weather: List<Map<String, Any>>) = Weather(
-        weather[0][DESCRIPTION] as String,
+        (weather[0][DESCRIPTION] as String).replaceFirstChar { it.titlecase(Locale.getDefault()) },
         weather[0][ICON] as String
     )
 

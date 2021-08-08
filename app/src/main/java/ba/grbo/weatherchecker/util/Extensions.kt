@@ -21,12 +21,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-
-
-
-
-
-
 // Note: Make sure to collect from flow before any value is emitted, otherwise all values emitted
 // before collecting the flow are lost (not acknowledged).
 @Suppress("FunctionName", "UNCHECKED_CAST")

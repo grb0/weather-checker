@@ -12,4 +12,7 @@
     <color name="ripple">#66BB86FC</color>
     <color name="highlight">#4D6200EE</color>
     <color name="scrollbar">#4DBCBCBC</color>
+    <color name="disabled">#42FFFFFF</color>
+    <color name="swipe_background">#D32F2F</color>
+    <color name="swipe_text_and_icon">#E6FFFFFF</color>
 </resources>

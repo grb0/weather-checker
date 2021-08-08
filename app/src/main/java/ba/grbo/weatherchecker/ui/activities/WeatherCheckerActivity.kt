@@ -52,6 +52,8 @@ class WeatherCheckerActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
+    fun blinkBanner() = bannerAnimator.blink()
+
     private fun WeatherCheckerViewModel.collectFlows() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

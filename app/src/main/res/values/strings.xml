@@ -5,5 +5,17 @@
     <string name="internet_connection_missing">Internet connection missing</string>
 
     <string name="exception_msg">An exception occurred, if it persists restart or reinstall the app.</string>
+    <string name="undo_msg">%s removed.</string>
     <string name="exception_action_msg">OK</string>
+    <string name="undo_action_msg">UNDO</string>
+    <string name="country_flag">Country flag</string>
+    <string name="weather_icon">Weather icon</string>
+    
+    <string name="overviewed_place_temp_format">%.0f°C</string>
+    <string name="overviewed_place_feels_like_temp_format">Feels like %.0f°C</string>
+    <string name="overviewed_place_wind_format">Wind: %.2fm/s</string>
+    <string name="overviewed_place_visibility_format">Visibility: %.2fkm</string>
+    <string name="empty_document">Empty document</string>
+    <string name="empty_document_msg">Fill this places by searching for locations, whose temperature you\'re interested in.</string>
+    <string name="magnifier">Magnifier</string>
 </resources>

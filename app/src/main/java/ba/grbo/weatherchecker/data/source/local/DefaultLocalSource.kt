@@ -9,8 +9,6 @@ import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.util.toSourceResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import java.text.Normalizer
@@ -51,6 +49,12 @@ class DefaultLocalSource @Inject constructor(
         }
     }
 
+    override suspend fun getOverviewedPlaces(): SourceResult<List<Place>> {
+        return withContext(ioDispatcher) {
+            toSourceResult { placeDao.getOverviewed() }
+        }
+    }
+
     override suspend fun getPlaces(query: String): SourceResult<List<Place>> {
         return withContext(ioDispatcher) {
             toSourceResult {
@@ -64,13 +68,6 @@ class DefaultLocalSource @Inject constructor(
 
     override fun observePlace(coordinate: Coordinate): Flow<SourceResult<Place>> {
         return placeDao.observe(coordinate).toSourceResult()
-    }
-
-    override fun observePlaces(coordinates: List<Coordinate>): Flow<SourceResult<List<Place>>> {
-        return placeDao.observe(coordinates)
-            .map { places -> places.sortedBy { place -> place.info.countryCode } }
-            .flowOn(ioDispatcher)
-            .toSourceResult()
     }
 
     private suspend fun arePlacesInsertedSuccessfully(

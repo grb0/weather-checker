@@ -10,21 +10,28 @@ import ba.grbo.weatherchecker.data.source.Result.SourceResult.Success
 import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.util.Constants.SEARCHER_DEBOUNCE_PERIOD
 import ba.grbo.weatherchecker.util.NetworkManager
+import ba.grbo.weatherchecker.util.OnImageLoadingError
 import ba.grbo.weatherchecker.util.SingleSharedFlow
+import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
 class OverviewViewModel @Inject constructor(
     private val repository: Repository,
     @IODispatcher private val ioDispatcher: CoroutineDispatcher,
-    networkManager: NetworkManager
+    private val networkManager: NetworkManager
 ) : ViewModel() {
+    val onImageLoadingError: OnImageLoadingError = OnImageLoadingError {
+        notifyUserOfError(Exception(it))
+    }
+
     private val internetStatus = networkManager.internetStatus
 
     private var _userInitializedUnfocus = false
@@ -34,6 +41,10 @@ class OverviewViewModel @Inject constructor(
     private val location = MutableStateFlow<String?>(null)
 
     private val locationWithInternetStatus = location.combine(internetStatus) { l, i -> l to i }
+
+    private val _locationSearchedEnabled = MutableStateFlow<Boolean?>(null)
+    val locationSearcherEnabled: StateFlow<Boolean?>
+        get() = _locationSearchedEnabled
 
     private val _onLocationSearcherFocusChanged = MutableStateFlow<Boolean?>(null)
     val onLocationSearcherFocusChanged: StateFlow<Boolean?>
@@ -55,28 +66,77 @@ class OverviewViewModel @Inject constructor(
     val suggestedPlaces: StateFlow<List<Place>?>
         get() = _suggestedPlaces
 
-    private val _suggestedPlacesCardShown = MutableStateFlow(false)
-    val suggestedPlacesCardShown: StateFlow<Boolean>
+    private val _overviewedPlaces = MutableStateFlow<List<Place>?>(null)
+    val overviewedPlaces: StateFlow<List<Place>?>
+        get() = _overviewedPlaces
+
+    private val _suggestedPlacesCardShown = MutableStateFlow<Boolean?>(null)
+    val suggestedPlacesCardShown: StateFlow<Boolean?>
         get() = _suggestedPlacesCardShown
 
-    private val _suggestedPlacesShown = MutableStateFlow(false)
-    val suggestedPlacesCShown: StateFlow<Boolean>
+    private val _suggestedPlacesShown = MutableStateFlow<Boolean?>(null)
+    val suggestedPlacesCShown: StateFlow<Boolean?>
         get() = _suggestedPlacesShown
 
-    private val _loadingSpinnerShown = MutableStateFlow(false)
-    val loadingSpinnerShown: StateFlow<Boolean>
-        get() = _loadingSpinnerShown
+    private val _overviewedPlacesCardShown = MutableStateFlow<Boolean?>(null)
+    val overviewedPlacesCardShown: StateFlow<Boolean?>
+        get() = _overviewedPlacesCardShown
+
+    private val _emptySuggestedPlacesInfoShown = MutableStateFlow<Boolean?>(null)
+    val emptySuggestedPlacesInfoShown: StateFlow<Boolean?>
+        get() = _emptySuggestedPlacesInfoShown
+
+    private val _emptyOverviewedPlacesInfoShown = MutableStateFlow<Boolean?>(null)
+    val emptyOverviewedPlacesInfoShown: StateFlow<Boolean?>
+        get() = _emptyOverviewedPlacesInfoShown
+
+    private val _suggestedPlacesLoadingSpinnerShown = MutableStateFlow<Boolean?>(null)
+    val suggestedPlacesLoadingSpinnerShown: StateFlow<Boolean?>
+        get() = _suggestedPlacesLoadingSpinnerShown
+
+    private val _overviewedPlacesLoadingSpinnerShown = MutableStateFlow<Boolean?>(null)
+    val overviewedPlacesLoadingSpinnerShown: StateFlow<Boolean?>
+        get() = _overviewedPlacesLoadingSpinnerShown
+
+    private val _blinkInternetMissingBanner = SingleSharedFlow<Unit>()
+    val blinkInternetMissingBanner: SharedFlow<Unit>
+        get() = _blinkInternetMissingBanner
+
+    private val _undoRemovedOverviewedPlaceSnackbackShown = MutableStateFlow<String?>(null)
+    val undoRemovedOverviewedPlaceSnackbackShown: StateFlow<String?>
+        get() = _undoRemovedOverviewedPlaceSnackbackShown
 
     private val _exceptionSnackbarShown = MutableStateFlow(false)
     val exceptionSnackbarShown: StateFlow<Boolean>
         get() = _exceptionSnackbarShown
 
+    private val _scrollOverviewedPlacesToTop = SingleSharedFlow<Unit>()
+    val scrollOverviewedPlacesToTop: SharedFlow<Unit>
+        get() = _scrollOverviewedPlacesToTop
+
     private val _scrollSuggestedPlacesToTop = SingleSharedFlow<Unit>()
     val scrollSuggestedPlacesToTop: SharedFlow<Unit>
         get() = _scrollSuggestedPlacesToTop
 
+    private val _clearLocationSearcherFocus = SingleSharedFlow<Unit>()
+    val clearLocationSearcherFocus: SharedFlow<Unit>
+        get() = _clearLocationSearcherFocus
+
+    private val _verticalDividerShown = MutableStateFlow<Boolean?>(null)
+    val verticalDividerShown: StateFlow<Boolean?>
+        get() = _verticalDividerShown
+
+    private var isVerticalDividerShown = false
+    private var wasVerticalDidiverHidden = false
+
+    private var overviewedPlacesSize = 0
+
+    private var removedOverviewedPlace: Place? = null
+    private var wasUndone = false
+
     init {
-        // viewModelScope.collectLatestLocation()
+        viewModelScope.emitOverviewedPlaces()
+        viewModelScope.collectLatestOverviewedPlaces()
         viewModelScope.collectLatestLocationWithInternetStatus()
         viewModelScope.collectLatestSuggestedPlaces()
     }
@@ -90,6 +150,10 @@ class OverviewViewModel @Inject constructor(
     }
 
     fun onLocationResetterClicked() {
+        resetLocationSearcherText()
+    }
+
+    private fun resetLocationSearcherText() {
         _resetLocationSearcherText.tryEmit(Unit)
     }
 
@@ -120,13 +184,67 @@ class OverviewViewModel @Inject constructor(
             location?.let { loc ->
                 if (loc.isNotEmpty()) {
                     showLocationResetter()
-                    if (loc.length < 3) repository.updateSuggestedPlaces(null)
-                    else if (!_suggestedPlacesCardShown.value) showLoadingSpinner()
+                    if (loc.length < 3) repository.resetSuggestedPlaces()
+                    else repository.setSuggestedPlacesToLoadingState()
                     delay(SEARCHER_DEBOUNCE_PERIOD)
                     if (loc.length >= 3) repository.updateSuggestedPlaces(loc, hasInternet)
                 } else {
                     hideLocationResetter()
-                    repository.updateSuggestedPlaces(null)
+                    repository.resetSuggestedPlaces()
+                }
+            }
+        }
+    }
+
+    private fun CoroutineScope.collectLatestOverviewedPlaces() = launch(ioDispatcher) {
+        repository.overviewedPlaces.collectLatest { overviewedPlaces ->
+            when (overviewedPlaces) {
+                is Success -> if (overviewedPlaces.data.isNotEmpty()) {
+                    overviewedPlacesSize = overviewedPlaces.data.size
+                    hideOverviewedPlacesLoadingSpinner()
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    hideSuggestedPlacesCard()
+                    hideEmptyOverviewedPlacesInfo()
+                    showVerticalDividerIfItWasShown()
+                    showOverviewPlacesCard()
+                    setOverviewedPlaces(overviewedPlaces.data)
+                    enableLocationSearcher()
+                } else {
+                    Logger.i("empty")
+                    overviewedPlacesSize = 0
+                    hideOverviewedPlacesLoadingSpinner()
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    hideSuggestedPlacesCard()
+                    hideEmptyOverviewedPlacesInfo()
+                    hideVerticalDividerIfItsShown()
+                    hideOverviewedPlacesCard()
+                    setOverviewedPlaces(null)
+                    showEmptyOverviewedPlacesInfo()
+                    enableLocationSearcher()
+                }
+                is Error -> {
+                    hideOverviewedPlacesLoadingSpinner()
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    hideSuggestedPlacesCard()
+                    notifyUserOfError(overviewedPlaces.exception)
+                    enableLocationSearcher()
+                }
+                is Loading -> {
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    hideSuggestedPlacesCard()
+                    resetLocationSearcherText()
+                    clearLocationSearcherFocus()
+                    disableLocationSearcher()
+                    hideEmptyOverviewedPlacesInfo()
+                    showOverviewedPlacesLoadingSpinner()
                 }
             }
         }
@@ -135,77 +253,278 @@ class OverviewViewModel @Inject constructor(
     private fun CoroutineScope.collectLatestSuggestedPlaces() = launch(ioDispatcher) {
         repository.suggestedPlaces.collectLatest { suggestedPlaces ->
             when (suggestedPlaces) {
-                null -> hideAndUpdateSuggestedPlaces()
+                null -> {
+                    hideSuggestedPlacesCard()
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    showOverviewedPlacesCardOrEmptyOverviewedPlacesInfo()
+                }
                 is Success -> if (suggestedPlaces.data.isNotEmpty()) {
-                    showAndUpdateSuggestedPlaces(suggestedPlaces.data)
-                } else hideAndUpdateSuggestedPlaces()
-                // is Success -> showAndUpdateSuggestedPlaces(suggestedPlaces.data)
-                is Error -> notifyUserOfError(suggestedPlaces.exception)
-                is Loading -> showLoadingSpinner()
+                    hideVerticalDividerIfItsShown()
+                    hideOverviewedPlacesCard()
+                    hideOverviewedPlacesLoadingSpinner()
+                    hideEmptyOverviewedPlacesInfo()
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideEmptySuggestedPlacesInfo()
+                    showSuggestedPlacesCard()
+                    showSuggestedPlaces()
+                    setSuggestedPlaces(suggestedPlaces.data)
+                } else {
+                    hideSuggestedPlacesLoadingSpinner()
+                    hideSuggestedPlaces()
+                    showEmptySuggestedPlacesInfo()
+                }
+                is Error -> checkExceptionType(suggestedPlaces.exception)
+                is Loading -> {
+                    hideSuggestedPlaces()
+                    hideEmptySuggestedPlacesInfo()
+                    hideOverviewedPlacesLoadingSpinner()
+                    hideVerticalDividerIfItsShown()
+                    hideOverviewedPlacesCard()
+                    hideEmptyOverviewedPlacesInfo()
+                    showSuggestedPlacesCard()
+                    showSuggestedPlacesLoadingSpinner()
+                }
             }
         }
     }
 
-    private fun hideAndUpdateSuggestedPlaces() {
-        if (_suggestedPlacesCardShown.value) hideSuggestedPlacesCard()
-        if (_suggestedPlacesShown.value) hideSuggestedPlaces()
-        hideLoadingSpinner()
+    private fun hideVerticalDividerIfItsShown() {
+        if (isVerticalDividerShown) {
+            _verticalDividerShown.value = false
+            wasVerticalDidiverHidden = true
+        }
     }
 
-    private fun showAndUpdateSuggestedPlaces(suggestedPlaces: List<Place>) {
-        if (!_suggestedPlacesCardShown.value) showSuggestedPlacesCard()
-        if (!_suggestedPlacesShown.value) showSuggestedPlaces()
-        hideLoadingSpinner()
-        updateSuggestedPlaces(suggestedPlaces)
+    private fun showVerticalDividerIfItWasShown() {
+        if (isVerticalDividerShown) {
+            _verticalDividerShown.value = true
+            wasVerticalDidiverHidden = false
+        }
     }
 
-    private fun updateSuggestedPlaces(suggestedPlaces: List<Place>?) {
+    private fun showOverviewedPlacesCardOrEmptyOverviewedPlacesInfo() {
+        if (_overviewedPlacesLoadingSpinnerShown.value != true) {
+            if (_overviewedPlaces.value?.isNotEmpty() == true) {
+                showVerticalDividerIfItWasShown()
+                showOverviewPlacesCard()
+            } else showEmptyOverviewedPlacesInfo()
+        }
+    }
+
+    private fun CoroutineScope.emitOverviewedPlaces() = launch(ioDispatcher) {
+        repository.emitOverviewedPlaces(networkManager.hasInternet)
+    }
+
+    private fun setOverviewedPlaces(overviewedPlaces: List<Place>?) {
+        _overviewedPlaces.value = overviewedPlaces
+    }
+
+    private fun setSuggestedPlaces(suggestedPlaces: List<Place>?) {
         _suggestedPlaces.value = suggestedPlaces
     }
 
+    private fun showOverviewPlacesCard() {
+        showView(_overviewedPlacesCardShown)
+    }
+
+    private fun hideOverviewedPlacesCard() {
+        hideView(_overviewedPlacesCardShown)
+    }
+
+    private fun showEmptySuggestedPlacesInfo() {
+        showView(_emptySuggestedPlacesInfoShown)
+    }
+
+    private fun hideEmptySuggestedPlacesInfo() {
+        hideView(_emptySuggestedPlacesInfoShown)
+    }
+
+    private fun showEmptyOverviewedPlacesInfo() {
+        showView(_emptyOverviewedPlacesInfoShown)
+    }
+
+    private fun hideEmptyOverviewedPlacesInfo() {
+        hideView(_emptyOverviewedPlacesInfoShown)
+    }
+
+    private fun showOverviewedPlacesLoadingSpinner() {
+        showView(_overviewedPlacesLoadingSpinnerShown)
+    }
+
+    private fun hideOverviewedPlacesLoadingSpinner() {
+        hideView(_overviewedPlacesLoadingSpinnerShown)
+    }
+
     private fun showSuggestedPlacesCard() {
-        _suggestedPlacesCardShown.value = true
+        showView(_suggestedPlacesCardShown)
     }
 
     private fun hideSuggestedPlacesCard() {
-        _suggestedPlacesCardShown.value = false
+        hideView(_suggestedPlacesCardShown)
     }
 
     private fun showSuggestedPlaces() {
-        _suggestedPlacesShown.value = true
+        showView(_suggestedPlacesShown)
     }
 
     private fun hideSuggestedPlaces() {
-        _suggestedPlacesShown.value = false
+        hideView(_suggestedPlacesShown)
+    }
+
+    private fun enableLocationSearcher() {
+        _locationSearchedEnabled.value = true
+    }
+
+    private fun disableLocationSearcher() {
+        _locationSearchedEnabled.value = false
+    }
+
+    private fun showView(view: MutableStateFlow<Boolean?>) {
+        view.value = true
+    }
+
+    private fun hideView(view: MutableStateFlow<Boolean?>) {
+        view.value = false
     }
 
     // According to the exception caught we can show an appropriate message, however for
     // simplicity we're gonna show a generic message.
     @Suppress("UNUSED_PARAMETER")
     private fun notifyUserOfError(exception: Exception) {
-        hideAndUpdateSuggestedPlaces()
         _exceptionSnackbarShown.value = true
+        Logger.i("original: $exception")
+        exception.suppressed.forEach {
+            Logger.i("suppressed: $it")
+        }
     }
 
-    fun onSnackbarMessageAcknowledge() {
+    private fun checkExceptionType(exception: Exception) = when (exception) {
+        is HttpException -> {
+            hideSuggestedPlacesLoadingSpinner()
+            hideSuggestedPlaces()
+            showEmptySuggestedPlacesInfo()
+        }
+        else -> {
+            hideSuggestedPlacesLoadingSpinner()
+            hideSuggestedPlaces()
+            hideEmptySuggestedPlacesInfo()
+            hideSuggestedPlacesCard()
+            showVerticalDividerIfItWasShown()
+            showOverviewPlacesCard()
+            notifyUserOfError(exception)
+        }
+
+    }
+
+    fun onExceptionSnackbarMessageAcknowledge() {
         _exceptionSnackbarShown.value = false
     }
 
+    fun onUndoRemovedOverviewedPlace() {
+        removedOverviewedPlace?.let {
+            viewModelScope.undoRemovedOverviewedPlace(it) {
+                wasUndone = true
+                removedOverviewedPlace = null
+            }
+        }
+    }
+
+    fun onUndoSnackbarDismissed() {
+        _undoRemovedOverviewedPlaceSnackbackShown.value = null
+    }
+
     fun resetSuggestedPlaces() {
-        updateSuggestedPlaces(null)
+        setSuggestedPlaces(null)
     }
 
     fun onSuggestedPlacesChanged() {
         _scrollSuggestedPlacesToTop.tryEmit(Unit)
     }
 
-    private fun showLoadingSpinner() {
-        if (!_suggestedPlacesCardShown.value) showSuggestedPlacesCard()
-        _loadingSpinnerShown.value = true
+    fun onOverviewedPlacesChanged() {
+        if (wasUndone) wasUndone = false
+        else _scrollOverviewedPlacesToTop.tryEmit(Unit)
     }
 
-    private fun hideLoadingSpinner() {
-        _loadingSpinnerShown.value = false
+    fun onSuggestedPlaceClicked(suggestedPlace: Place) {
+        if (!networkManager.hasInternet && !suggestedPlace.cached) blinkInternetMissingBanner()
+        else viewModelScope.emitOverviewedPlaces(suggestedPlace, overviewedPlacesSize + 1)
+    }
+
+    fun onOverviewedPlacesScrolled(verticalOffset: Int) {
+        if (!wasVerticalDidiverHidden) isVerticalDividerShown = if (verticalOffset >= 1) {
+            showView(_verticalDividerShown)
+            true
+        } else {
+            hideView(_verticalDividerShown)
+            false
+        }
+    }
+
+    fun onOverviewedPlacesMoved(fromPosition: Int, toPosition: Int) {
+        val placesToUpdate = mutableListOf<Place>()
+        var topToBottom = false
+        if (fromPosition < toPosition) {
+            _overviewedPlaces.value?.forEachIndexed { index, place ->
+                if (index in fromPosition..toPosition) placesToUpdate.add(place)
+            }
+            topToBottom = true
+        } else _overviewedPlaces.value?.forEachIndexed { index, place ->
+            if (index in fromPosition downTo toPosition) placesToUpdate.add(place)
+        }
+
+        viewModelScope.swapOverviewedPlaces(placesToUpdate, topToBottom)
+    }
+
+    fun onOverviewedPlacesSwiped(itemPosition: Int) {
+        _overviewedPlaces.value?.get(itemPosition)?.let { place ->
+            viewModelScope.removeOverviewedPlace(place) {
+                removedOverviewedPlace = place
+                _undoRemovedOverviewedPlaceSnackbackShown.value = place.info.place
+            }
+        }
+    }
+
+    private fun CoroutineScope.swapOverviewedPlaces(
+        places: List<Place>,
+        topToBottom: Boolean
+    ) = launch(ioDispatcher) {
+        repository.swapOverviewedPlaces(places, topToBottom)
+    }
+
+    private fun CoroutineScope.undoRemovedOverviewedPlace(
+        place: Place,
+        onSuccess: () -> Unit
+    ) = launch(ioDispatcher) {
+        repository.addOverviewedPlace(place, onSuccess)
+    }
+
+    private fun CoroutineScope.removeOverviewedPlace(
+        place: Place,
+        onSuccess: () -> Unit
+    ) = launch(ioDispatcher) {
+        repository.removeOverviewedPlace(place, onSuccess)
+    }
+
+    private fun CoroutineScope.emitOverviewedPlaces(
+        place: Place,
+        overviewedPlacesSize: Int
+    ) = launch(ioDispatcher) {
+        repository.addOverviewedPlace(place, overviewedPlacesSize, networkManager.hasInternet)
+    }
+
+    private fun blinkInternetMissingBanner() {
+        _blinkInternetMissingBanner.tryEmit(Unit)
+    }
+
+    private fun showSuggestedPlacesLoadingSpinner() {
+        showView(_suggestedPlacesLoadingSpinnerShown)
+    }
+
+    private fun hideSuggestedPlacesLoadingSpinner() {
+        hideView(_suggestedPlacesLoadingSpinnerShown)
     }
 
     private fun showLocationResetter() {
@@ -214,5 +533,9 @@ class OverviewViewModel @Inject constructor(
 
     private fun hideLocationResetter() {
         _locationResetterVisibility.value = false
+    }
+
+    private fun clearLocationSearcherFocus() {
+        _clearLocationSearcherFocus.tryEmit(Unit)
     }
 }

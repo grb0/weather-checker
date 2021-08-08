@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 
 @Suppress("UNUSED", "DEPRECATION")
-open class CustomRecyclerView : RecyclerView {
+open class CustomScrollBarColorRecyclerView : RecyclerView {
     var scrollBarColor: Int = context.getColorFromAttribute(android.R.attr.textColorHint)
 
     constructor(context: Context) : super(context)
