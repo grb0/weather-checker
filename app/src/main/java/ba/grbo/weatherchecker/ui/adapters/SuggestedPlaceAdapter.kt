@@ -2,41 +2,62 @@ package ba.grbo.weatherchecker.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.databinding.SuggestedPlaceBinding
+import com.orhanobut.logger.Logger
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class SuggestedPlaceAdapter(
     private val onSuggestedPlacesChanged: () -> Unit,
     private val onClick: (Place) -> Unit,
-    var rippleColor: Int
+    var rippleColor: Int,
+    private val viewLifecyclerOwner: LifecycleOwner
 ) : ListAdapter<Place, SuggestedPlaceAdapter.SuggestedPlaceHolder>(PlaceDiffCallbacks()) {
+    var hasInternet = MutableStateFlow(false)
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestedPlaceHolder {
-        return SuggestedPlaceHolder.from(parent, rippleColor)
+        return SuggestedPlaceHolder.from(parent, rippleColor, viewLifecyclerOwner)
     }
 
     override fun onBindViewHolder(holder: SuggestedPlaceHolder, position: Int) {
-        holder.bind(getItem(position), onClick, rippleColor)
+        holder.bind(getItem(position), onClick, rippleColor, hasInternet)
     }
 
     class SuggestedPlaceHolder private constructor(
-        private val binding: SuggestedPlaceBinding
+        private val binding: SuggestedPlaceBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
         companion object {
-            fun from(parent: ViewGroup, rippleColor: Int) = SuggestedPlaceHolder(
+            fun from(
+                parent: ViewGroup,
+                rippleColor: Int,
+                viewLifecyclerOwner: LifecycleOwner,
+            ) = SuggestedPlaceHolder(
                 SuggestedPlaceBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
-                ).apply { suggestedPlaceRippleLayout.setRippleColor(rippleColor) }
+                ).apply {
+                    lifecycleOwner = viewLifecyclerOwner
+                    suggestedPlaceRippleLayout.setRippleColor(rippleColor)
+                    Logger.i("from hasInternet: $hasInternet")
+                }
             )
         }
 
-        fun bind(place: Place, onClick: (Place) -> Unit, rippleColor: Int) {
+        fun bind(
+            place: Place,
+            onClick: (Place) -> Unit,
+            rippleColor: Int,
+            hasInternet: StateFlow<Boolean>
+        ) {
+            Logger.i("bind hasInternet: $hasInternet")
             binding.place = place
-            binding.hasInternet = false
+            binding.hasInternet = hasInternet
             binding.suggestedPlaceRippleLayout.setRippleColor(rippleColor)
             binding.root.setOnClickListener { onClick(place) }
             binding.executePendingBindings()

@@ -61,7 +61,7 @@ class DefaultLocalSource @Inject constructor(
                 placeDao.get()
                     .filterByQuery(query)
                     .sortedBy { it.info.countryCode }
-                    .sortedBy { it.shouldShowDbIcon(false) }
+                    .sortedBy { !it.shouldShowDbIcon(false) }
             }
         }
     }

@@ -36,6 +36,10 @@ class WeatherCheckerViewModel @Inject constructor(
     val requestedRefreshDone: SharedFlow<Unit>
         get() = _requestedRefreshDone
 
+    private val _swipeToRefreshEnabled = MutableStateFlow<Boolean?>(null)
+    val swipeToRefreshEnabled: StateFlow<Boolean?>
+        get() = _swipeToRefreshEnabled
+
     enum class AnimationState {
         READY,
         ANIMATING,
@@ -77,6 +81,10 @@ class WeatherCheckerViewModel @Inject constructor(
 
     fun onBlinkBannerRequested() {
         _blinkInternetMissingBanner.tryEmit(Unit)
+    }
+
+    fun onSwipeToRefreshEnabledChanged(enabled: Boolean) {
+        _swipeToRefreshEnabled.value = enabled
     }
 
     fun onAnimated() {

@@ -126,6 +126,14 @@ class OverviewViewModel @Inject constructor(
     val verticalDividerShown: StateFlow<Boolean?>
         get() = _verticalDividerShown
 
+    private val _updateSuggestedPlaceAdapter = MutableStateFlow<Boolean?>(false)
+    val updateSuggestedPlaceAdapter: StateFlow<Boolean?>
+        get() = _updateSuggestedPlaceAdapter
+
+    private val _swipeToRefreshEnabled = MutableStateFlow<Boolean?>(null)
+    val swipeToRefreshEnabled: StateFlow<Boolean?>
+        get() = _swipeToRefreshEnabled
+
     private var isVerticalDividerShown = false
     private var wasVerticalDidiverHidden = false
 
@@ -187,7 +195,10 @@ class OverviewViewModel @Inject constructor(
                     if (loc.length < 3) repository.resetSuggestedPlaces()
                     else repository.setSuggestedPlacesToLoadingState()
                     delay(SEARCHER_DEBOUNCE_PERIOD)
-                    if (loc.length >= 3) repository.updateSuggestedPlaces(loc, hasInternet)
+                    if (loc.length >= 3) {
+                        _updateSuggestedPlaceAdapter.value = hasInternet
+                        repository.updateSuggestedPlaces(loc, hasInternet)
+                    }
                 } else {
                     hideLocationResetter()
                     repository.resetSuggestedPlaces()
@@ -516,6 +527,14 @@ class OverviewViewModel @Inject constructor(
         }
 
         viewModelScope.swapOverviewedPlaces(placesToUpdate, topToBottom)
+    }
+
+    fun onDraggingStarted() {
+        _swipeToRefreshEnabled.value = false
+    }
+
+    fun onDraggingFinished() {
+        _swipeToRefreshEnabled.value = true
     }
 
     fun onOverviewedPlacesSwiped(itemPosition: Int) {

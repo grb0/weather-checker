@@ -34,6 +34,7 @@ import ba.grbo.weatherchecker.util.*
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
+import com.orhanobut.logger.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -115,9 +116,15 @@ class OverviewFragment : Fragment() {
             ).apply {
                 // This prevents fast down scroll when dragging the first item and
                 // scroll up when we drag an item to the top
-                registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
-                    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
-                        if (fromPosition == 0 || toPosition == 0) binding.overviewedPlaces.scrollToPosition(0)
+                registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+                    override fun onItemRangeMoved(
+                        fromPosition: Int,
+                        toPosition: Int,
+                        itemCount: Int
+                    ) {
+                        if (fromPosition == 0 || toPosition == 0) binding.overviewedPlaces.scrollToPosition(
+                            0
+                        )
                     }
                 })
             }
@@ -161,6 +168,7 @@ class OverviewFragment : Fragment() {
             super.onSelectedChanged(viewHolder, actionState)
             when (actionState) {
                 ItemTouchHelper.ACTION_STATE_DRAG -> {
+                    viewModel.onDraggingStarted()
                     startFromPosition = viewHolder?.adapterPosition
                     lastActionState = ItemTouchHelper.ACTION_STATE_DRAG
                 }
@@ -172,6 +180,7 @@ class OverviewFragment : Fragment() {
                         startFromPosition?.let { from ->
                             endToPosition?.let { to ->
                                 viewModel.onOverviewedPlacesMoved(from, to)
+                                viewModel.onDraggingFinished()
                             }
                         }
                     }
@@ -205,7 +214,8 @@ class OverviewFragment : Fragment() {
         binding.suggestedPlaces.adapter = SuggestedPlaceAdapter(
             viewModel::onSuggestedPlacesChanged,
             viewModel::onSuggestedPlaceClicked,
-            requireContext().getColorFromAttribute(android.R.attr.textColorHint)
+            requireContext().getColorFromAttribute(android.R.attr.textColorHint),
+            viewLifecycleOwner
         )
         addSuggestedPlacesDivider(false)
     }
@@ -277,6 +287,10 @@ class OverviewFragment : Fragment() {
                 }
 
                 launch {
+                    updateSuggestedPlaceAdapter.collect(::onInternetStatusChanged)
+                }
+
+                launch {
                     overviewedPlaces.collect(::onOverviewedPlacesChanged)
                 }
 
@@ -341,6 +355,14 @@ class OverviewFragment : Fragment() {
 
                 launch {
                     verticalDividerShown.collect(::onVerticalDividerShownChanged)
+                }
+
+                launch {
+                    swipeToRefreshEnabled.collect { enabled ->
+                        enabled?.let {
+                            activity.requestSwipeToRefreshEnabledStateChange(enabled)
+                        }
+                    }
                 }
             }
         }
@@ -466,6 +488,13 @@ class OverviewFragment : Fragment() {
 
     private fun onLoadingSpinnerShownChanged(view: View, loadingSpinnerShown: Boolean) {
         view.visibility = if (loadingSpinnerShown) View.VISIBLE else View.INVISIBLE
+    }
+
+    private fun onInternetStatusChanged(hasInternet: Boolean?) {
+        hasInternet?.let {
+            Logger.i("internetChanged: $it")
+            (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).hasInternet.value = it
+        }
     }
 
     private fun onSuggestedPlacesChanged(suggestedPlaces: List<Place>?) {

@@ -13,7 +13,7 @@
 
         <variable
             name="hasInternet"
-            type="Boolean" />
+            type="kotlinx.coroutines.flow.StateFlow&lt;Boolean&gt;" />
     </data>
 
     <com.balysv.materialripple.MaterialRippleLayout

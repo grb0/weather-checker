@@ -57,6 +57,10 @@ class WeatherCheckerActivity : AppCompatActivity() {
 
     fun requestBannerBlink() = viewModel.onBlinkBannerRequested()
 
+    fun requestSwipeToRefreshEnabledStateChange(enabled: Boolean) {
+        viewModel.onSwipeToRefreshEnabledChanged(enabled)
+    }
+
     private fun setListeners() {
         binding.weatherCheckerSwipeRefreshLayout.setOnRefreshListener {
             viewModel.onRefreshRequested()
@@ -89,6 +93,14 @@ class WeatherCheckerActivity : AppCompatActivity() {
 
                 launch {
                     blinkInternetMissingBanner.collect { blinkBanner() }
+                }
+
+                launch {
+                    swipeToRefreshEnabled.collect { enabled ->
+                        enabled?.let {
+                            binding.weatherCheckerSwipeRefreshLayout.isEnabled = it
+                        }
+                    }
                 }
             }
         }
