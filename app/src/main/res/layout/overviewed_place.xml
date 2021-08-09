@@ -18,7 +18,7 @@
         android:id="@+id/overviewed_place_ripple_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?android:colorBackground"
+        app:mrl_rippleBackground="?android:colorBackground"
         android:foreground="@drawable/border_internet_missing_banner"
         app:mrl_rippleColor="?android:colorPrimary">
 

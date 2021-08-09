@@ -34,7 +34,6 @@ import ba.grbo.weatherchecker.util.*
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import com.orhanobut.logger.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -144,8 +143,8 @@ class OverviewFragment : Fragment() {
         ): Boolean {
             val fromPosition = viewHolder.adapterPosition
             val toPosition = target.adapterPosition.also { endToPosition = it }
-            // Manually notify adapter of moved items, since the list won't update on moving, since
-            // it doesn't work well
+            // Manually updating list and notifying the adapter to avoid updating db on each move
+            // which doesn't work well, since db updating speed cannot keep up with moving.
             (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).run {
                 val current = currentList.toMutableList()
                 Collections.swap(current, fromPosition, toPosition)
@@ -164,11 +163,9 @@ class OverviewFragment : Fragment() {
                 ItemTouchHelper.ACTION_STATE_DRAG -> {
                     startFromPosition = viewHolder?.adapterPosition
                     lastActionState = ItemTouchHelper.ACTION_STATE_DRAG
-                    Logger.i("dragging")
                 }
                 ItemTouchHelper.ACTION_STATE_SWIPE -> {
                     lastActionState = ItemTouchHelper.ACTION_STATE_SWIPE
-                    Logger.i("swapping")
                 }
                 ItemTouchHelper.ACTION_STATE_IDLE -> {
                     if (lastActionState == ItemTouchHelper.ACTION_STATE_DRAG) {
@@ -177,7 +174,6 @@ class OverviewFragment : Fragment() {
                                 viewModel.onOverviewedPlacesMoved(from, to)
                             }
                         }
-                        Logger.i("done")
                     }
                 }
             }
@@ -478,14 +474,6 @@ class OverviewFragment : Fragment() {
 
     private fun onOverviewedPlacesChanged(overviewedPlaces: List<Place>?) {
         (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).submitList(overviewedPlaces)
-        // overviewedPlaces?.let {
-        //     (binding.overviewedPlaces.adapter as OverviewedPlaceAdapter).run {
-        //         // Only if the items were added or removed, does not work well if items were moved,
-        //         // docs state that diffutil performs second run to determine the moved items but
-        //         // it doesn't work well paired with draging and droping items (moving them around).
-        //         if (currentList.size != overviewedPlaces.size) submitList(overviewedPlaces)
-        //     }
-        // }
     }
 
     private fun onLocationSearcherFocused() {
