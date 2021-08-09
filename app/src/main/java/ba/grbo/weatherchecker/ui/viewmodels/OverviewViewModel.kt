@@ -199,53 +199,9 @@ class OverviewViewModel @Inject constructor(
     private fun CoroutineScope.collectLatestOverviewedPlaces() = launch(ioDispatcher) {
         repository.overviewedPlaces.collectLatest { overviewedPlaces ->
             when (overviewedPlaces) {
-                is Success -> if (overviewedPlaces.data.isNotEmpty()) {
-                    overviewedPlacesSize = overviewedPlaces.data.size
-                    hideOverviewedPlacesLoadingSpinner()
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    hideSuggestedPlacesCard()
-                    hideEmptyOverviewedPlacesInfo()
-                    showVerticalDividerIfItWasShown()
-                    showOverviewPlacesCard()
-                    setOverviewedPlaces(overviewedPlaces.data)
-                    enableLocationSearcher()
-                } else {
-                    Logger.i("empty")
-                    overviewedPlacesSize = 0
-                    hideOverviewedPlacesLoadingSpinner()
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    hideSuggestedPlacesCard()
-                    hideEmptyOverviewedPlacesInfo()
-                    hideVerticalDividerIfItsShown()
-                    hideOverviewedPlacesCard()
-                    setOverviewedPlaces(null)
-                    showEmptyOverviewedPlacesInfo()
-                    enableLocationSearcher()
-                }
-                is Error -> {
-                    hideOverviewedPlacesLoadingSpinner()
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    hideSuggestedPlacesCard()
-                    notifyUserOfError(overviewedPlaces.exception)
-                    enableLocationSearcher()
-                }
-                is Loading -> {
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    hideSuggestedPlacesCard()
-                    resetLocationSearcherText()
-                    clearLocationSearcherFocus()
-                    disableLocationSearcher()
-                    hideEmptyOverviewedPlacesInfo()
-                    showOverviewedPlacesLoadingSpinner()
-                }
+                is Success -> onOverviewedPlacesSuccess(overviewedPlaces.data)
+                is Error -> onOverviewedPlacesError(overviewedPlaces.exception)
+                is Loading -> onOverviewedPlacesLoading()
             }
         }
     }
@@ -253,41 +209,124 @@ class OverviewViewModel @Inject constructor(
     private fun CoroutineScope.collectLatestSuggestedPlaces() = launch(ioDispatcher) {
         repository.suggestedPlaces.collectLatest { suggestedPlaces ->
             when (suggestedPlaces) {
-                null -> {
-                    hideSuggestedPlacesCard()
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    showOverviewedPlacesCardOrEmptyOverviewedPlacesInfo()
-                }
-                is Success -> if (suggestedPlaces.data.isNotEmpty()) {
-                    hideVerticalDividerIfItsShown()
-                    hideOverviewedPlacesCard()
-                    hideOverviewedPlacesLoadingSpinner()
-                    hideEmptyOverviewedPlacesInfo()
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideEmptySuggestedPlacesInfo()
-                    showSuggestedPlacesCard()
-                    showSuggestedPlaces()
-                    setSuggestedPlaces(suggestedPlaces.data)
-                } else {
-                    hideSuggestedPlacesLoadingSpinner()
-                    hideSuggestedPlaces()
-                    showEmptySuggestedPlacesInfo()
-                }
-                is Error -> checkExceptionType(suggestedPlaces.exception)
-                is Loading -> {
-                    hideSuggestedPlaces()
-                    hideEmptySuggestedPlacesInfo()
-                    hideOverviewedPlacesLoadingSpinner()
-                    hideVerticalDividerIfItsShown()
-                    hideOverviewedPlacesCard()
-                    hideEmptyOverviewedPlacesInfo()
-                    showSuggestedPlacesCard()
-                    showSuggestedPlacesLoadingSpinner()
-                }
+                null -> onSuggestedPlacesNull()
+                is Success -> onSuggestedPlacesSuccess(suggestedPlaces.data)
+                is Error -> onPlacesError(suggestedPlaces.exception)
+                is Loading -> onSuggestedPlacesLoading()
             }
         }
+    }
+
+    private fun onOverviewedPlacesSuccess(overviewedPlaces: List<Place>) {
+        if (overviewedPlaces.isNotEmpty()) onOverviewedPlacesNonEmptySuccess(overviewedPlaces)
+        else onOverviewedPlacesEmptySuccess()
+    }
+
+    private fun onOverviewedPlacesNonEmptySuccess(overviewedPlaces: List<Place>) {
+        overviewedPlacesSize = overviewedPlaces.size
+        completelyHideSuggestedPlaces()
+        showOnlyOverviewedPlaces()
+        showVerticalDividerIfItWasShown()
+        setOverviewedPlaces(overviewedPlaces)
+        enableLocationSearcher()
+    }
+
+    private fun onOverviewedPlacesEmptySuccess() {
+        overviewedPlacesSize = 0
+        completelyHideSuggestedPlaces()
+        hideVerticalDividerIfItsShown()
+        showOnlyEmptyOverviewedPlacesInfo()
+        enableLocationSearcher()
+    }
+
+    private fun onOverviewedPlacesError(exception: Exception) {
+        hideOverviewedPlacesLoadingSpinner()
+        completelyHideSuggestedPlaces()
+        notifyUserOfError(exception)
+        enableLocationSearcher()
+    }
+
+    private fun onOverviewedPlacesLoading() {
+        completelyHideSuggestedPlaces()
+        resetLocationSearcherText()
+        clearLocationSearcherFocus()
+        disableLocationSearcher()
+        hideEmptyOverviewedPlacesInfo()
+        showOverviewedPlacesLoadingSpinner()
+    }
+
+    private fun onSuggestedPlacesNull() {
+        completelyHideSuggestedPlaces()
+        showOverviewedPlacesCardOrEmptyOverviewedPlacesInfo()
+    }
+
+    private fun onSuggestedPlacesSuccess(suggestedPlaces: List<Place>) {
+        if (suggestedPlaces.isNotEmpty()) onSuggestedPlacesNonEmptySuccess(suggestedPlaces)
+        else onSuggestedPlacesEmptySuccess()
+    }
+
+    private fun onSuggestedPlacesNonEmptySuccess(suggestedPlaces: List<Place>) {
+        hideVerticalDividerIfItsShown()
+        completelyHideOverviewedPlaces()
+        showOnlySuggestedPlaces()
+        setSuggestedPlaces(suggestedPlaces)
+    }
+
+    private fun onSuggestedPlacesEmptySuccess() {
+        completelyHideOverviewedPlaces()
+        showOnlyEmptySuggestedPlacesInfo()
+    }
+
+    private fun onSuggestedPlacesLoading() {
+        completelyHideOverviewedPlaces()
+        hideVerticalDividerIfItsShown()
+        showOnlySuggestedPlacesLoadingSpinner()
+    }
+
+    private fun completelyHideSuggestedPlaces() {
+        hideSuggestedPlacesLoadingSpinner()
+        hideSuggestedPlaces()
+        hideEmptySuggestedPlacesInfo()
+        hideSuggestedPlacesCard()
+    }
+
+    private fun completelyHideOverviewedPlaces() {
+        hideOverviewedPlacesCard()
+        hideOverviewedPlacesLoadingSpinner()
+        hideEmptyOverviewedPlacesInfo()
+    }
+
+    private fun showOnlySuggestedPlaces() {
+        hideSuggestedPlacesLoadingSpinner()
+        hideEmptySuggestedPlacesInfo()
+        showSuggestedPlacesCard()
+        showSuggestedPlaces()
+    }
+
+    private fun showOnlyEmptySuggestedPlacesInfo() {
+        hideSuggestedPlacesLoadingSpinner()
+        hideSuggestedPlaces()
+        showEmptySuggestedPlacesInfo()
+    }
+
+    private fun showOnlySuggestedPlacesLoadingSpinner() {
+        hideSuggestedPlaces()
+        hideEmptySuggestedPlacesInfo()
+        showSuggestedPlacesCard()
+        showSuggestedPlacesLoadingSpinner()
+    }
+
+    private fun showOnlyOverviewedPlaces() {
+        hideOverviewedPlacesLoadingSpinner()
+        hideEmptyOverviewedPlacesInfo()
+        showOverviewPlacesCard()
+    }
+
+    private fun showOnlyEmptyOverviewedPlacesInfo() {
+        hideOverviewedPlacesLoadingSpinner()
+        hideOverviewedPlacesCard()
+        setOverviewedPlaces(null)
+        showEmptyOverviewedPlacesInfo()
     }
 
     private fun hideVerticalDividerIfItsShown() {
@@ -400,7 +439,7 @@ class OverviewViewModel @Inject constructor(
         }
     }
 
-    private fun checkExceptionType(exception: Exception) = when (exception) {
+    private fun onPlacesError(exception: Exception) = when (exception) {
         is HttpException -> {
             hideSuggestedPlacesLoadingSpinner()
             hideSuggestedPlaces()
