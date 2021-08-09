@@ -57,5 +57,5 @@ class PlaceDiffCallbacks : DiffUtil.ItemCallback<Place>() {
         newItem: Place
     ) = oldItem.coordinate == newItem.coordinate
 
-    override fun areContentsTheSame(oldItem: Place, newItem: Place) = oldItem.coordinate == newItem.coordinate
+    override fun areContentsTheSame(oldItem: Place, newItem: Place) = oldItem == newItem
 }

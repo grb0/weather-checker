@@ -223,6 +223,8 @@ class OverviewFragment : Fragment() {
             }
 
             locationResetter.setOnClickListener { viewModel.onLocationResetterClicked() }
+
+            overviewSwipeRefreshLayout.setOnRefreshListener { viewModel.onRefreshRequested() }
         }
     }
 
@@ -341,6 +343,12 @@ class OverviewFragment : Fragment() {
 
                 launch {
                     verticalDividerShown.collect(::onVerticalDividerShownChanged)
+                }
+
+                launch {
+                    refreshDone.collect {
+                        binding.overviewSwipeRefreshLayout.isRefreshing = false
+                    }
                 }
             }
         }

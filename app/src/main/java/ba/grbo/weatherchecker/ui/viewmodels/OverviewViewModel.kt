@@ -102,6 +102,10 @@ class OverviewViewModel @Inject constructor(
     val blinkInternetMissingBanner: SharedFlow<Unit>
         get() = _blinkInternetMissingBanner
 
+    private val _refreshDone = SingleSharedFlow<Unit>()
+    val refreshDone: SharedFlow<Unit>
+        get() = _refreshDone
+
     private val _undoRemovedOverviewedPlaceSnackbackShown = MutableStateFlow<String?>(null)
     val undoRemovedOverviewedPlaceSnackbackShown: StateFlow<String?>
         get() = _undoRemovedOverviewedPlaceSnackbackShown
@@ -151,6 +155,10 @@ class OverviewViewModel @Inject constructor(
 
     fun onLocationResetterClicked() {
         resetLocationSearcherText()
+    }
+
+    fun onRefreshRequested() {
+        viewModelScope.refreshOverviewedPlaces()
     }
 
     private fun resetLocationSearcherText() {
@@ -215,6 +223,11 @@ class OverviewViewModel @Inject constructor(
                 is Loading -> onSuggestedPlacesLoading()
             }
         }
+    }
+
+    private fun CoroutineScope.refreshOverviewedPlaces() = launch(ioDispatcher) {
+        if (networkManager.hasInternet) repository.refreshOverviewedPlaces(::requestedRefreshDone)
+        else _blinkInternetMissingBanner.tryEmit(Unit)
     }
 
     private fun onOverviewedPlacesSuccess(overviewedPlaces: List<Place>) {
@@ -327,6 +340,10 @@ class OverviewViewModel @Inject constructor(
         hideOverviewedPlacesCard()
         setOverviewedPlaces(null)
         showEmptyOverviewedPlacesInfo()
+    }
+
+    private fun requestedRefreshDone() {
+        _refreshDone.tryEmit(Unit)
     }
 
     private fun hideVerticalDividerIfItsShown() {

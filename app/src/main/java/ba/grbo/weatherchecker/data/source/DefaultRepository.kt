@@ -130,7 +130,13 @@ class DefaultRepository @Inject constructor(
         _suggestedPlaces.value = Loading
     }
 
-    private suspend fun updateAndEmitOverviewedPlaces(): SourceResult<List<Place>> {
+    override suspend fun refreshOverviewedPlaces(onSuccess: () -> Unit) {
+        _overviewedPlaces.value = updateAndEmitOverviewedPlaces(onSuccess)
+    }
+
+    private suspend fun updateAndEmitOverviewedPlaces(
+        onSuccess: (() -> Unit)? = null
+    ): SourceResult<List<Place>> {
         return onSourceResultArrived(localDataSource.getOverviewedPlaces()) { places ->
             coroutineScope {
                 val deferreds = places.data.map { place ->
@@ -145,7 +151,10 @@ class DefaultRepository @Inject constructor(
                         }
                     }
                 }
-                checkSuccessfulnessAndEmitOverviewedPlaces(deferreds.awaitAll())
+                checkSuccessfulnessAndEmitOverviewedPlaces(
+                    deferreds.awaitAll(),
+                    onSuccess
+                )
             }
         }
     }
@@ -155,10 +164,13 @@ class DefaultRepository @Inject constructor(
     }
 
     private fun checkSuccessfulnessAndEmitOverviewedPlaces(
-        places: List<SourceResult<Place>>
+        places: List<SourceResult<Place>>,
+        onSuccess: (() -> Unit)? = null
     ): SourceResult<List<Place>> {
-        return if (places.all { it is Success }) Success(places.map { (it as Success).data })
-        else Error((places.first { it is Error } as Error).exception)
+        return if (places.all { it is Success }) {
+            onSuccess?.invoke()
+            Success(places.map { (it as Success).data })
+        } else Error((places.first { it is Error } as Error).exception)
     }
 
     private suspend fun getSuggestedPlacesFromNetwork(location: String): SourceResult<List<Place>> {
