@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.StateFlow
 class SuggestedPlaceAdapter(
     private val onSuggestedPlacesChanged: () -> Unit,
     private val onClick: (Place) -> Unit,
-    var rippleColor: Int,
+    var rippleColor: MutableStateFlow<Int>,
     private val viewLifecyclerOwner: LifecycleOwner
 ) : ListAdapter<Place, SuggestedPlaceAdapter.SuggestedPlaceHolder>(PlaceDiffCallbacks()) {
     var hasInternet = MutableStateFlow(false)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestedPlaceHolder {
-        return SuggestedPlaceHolder.from(parent, rippleColor, viewLifecyclerOwner)
+        return SuggestedPlaceHolder.from(parent, viewLifecyclerOwner)
     }
 
     override fun onBindViewHolder(holder: SuggestedPlaceHolder, position: Int) {
@@ -34,31 +34,26 @@ class SuggestedPlaceAdapter(
         companion object {
             fun from(
                 parent: ViewGroup,
-                rippleColor: Int,
-                viewLifecyclerOwner: LifecycleOwner,
+                viewLifecyclerOwner: LifecycleOwner
             ) = SuggestedPlaceHolder(
                 SuggestedPlaceBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
                     false
-                ).apply {
-                    lifecycleOwner = viewLifecyclerOwner
-                    suggestedPlaceRippleLayout.setRippleColor(rippleColor)
-                    Logger.i("from hasInternet: $hasInternet")
-                }
+                ).apply { lifecycleOwner = viewLifecyclerOwner }
             )
         }
 
         fun bind(
             place: Place,
             onClick: (Place) -> Unit,
-            rippleColor: Int,
+            rippleColor: StateFlow<Int>,
             hasInternet: StateFlow<Boolean>
         ) {
             Logger.i("bind hasInternet: $hasInternet")
             binding.place = place
             binding.hasInternet = hasInternet
-            binding.suggestedPlaceRippleLayout.setRippleColor(rippleColor)
+            binding.suggestedPlaceRippleLayout.setRippleColor(rippleColor.value)
             binding.root.setOnClickListener { onClick(place) }
             binding.executePendingBindings()
         }

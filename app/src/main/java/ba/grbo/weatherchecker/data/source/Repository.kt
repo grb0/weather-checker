@@ -27,6 +27,8 @@ interface Repository {
 
     suspend fun refreshOverviewedPlaces(onSuccess: () -> Unit)
 
+    suspend fun setOverviewedPlacesToLoading()
+
     fun resetSuggestedPlaces()
 
     fun setSuggestedPlacesToLoadingState()

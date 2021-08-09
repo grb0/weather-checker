@@ -37,6 +37,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -214,7 +215,7 @@ class OverviewFragment : Fragment() {
         binding.suggestedPlaces.adapter = SuggestedPlaceAdapter(
             viewModel::onSuggestedPlacesChanged,
             viewModel::onSuggestedPlaceClicked,
-            requireContext().getColorFromAttribute(android.R.attr.textColorHint),
+            MutableStateFlow(requireContext().getColorFromAttribute(android.R.attr.textColorHint)),
             viewLifecycleOwner
         )
         addSuggestedPlacesDivider(false)
@@ -522,7 +523,7 @@ class OverviewFragment : Fragment() {
     @Suppress("NotifyDataSetChanged")
     private fun setRippleColor(color: Int) {
         (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).run {
-            rippleColor = color
+            rippleColor.value = color
             // To trigger rebind, since viewport size is changing based on whether the keyboard
             // is shown or not cannot rely on notifyItemRangeChanged method.
             notifyDataSetChanged()

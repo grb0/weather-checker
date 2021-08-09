@@ -43,7 +43,7 @@ class DefaultRepository @Inject constructor(
         overviewedPlacesSize: Int,
         hasInternet: Boolean
     ) {
-        _overviewedPlaces.value = Loading
+        setOverviewedPlacesToLoading()
         _overviewedPlaces.value = if (hasInternet) getOverviewedPlacesFromNetwork(
             place,
             overviewedPlacesSize
@@ -81,7 +81,6 @@ class DefaultRepository @Inject constructor(
     }
 
     override suspend fun emitOverviewedPlaces(hasInternet: Boolean) {
-        _overviewedPlaces.value = Loading
         _overviewedPlaces.value = if (hasInternet) updateAndEmitOverviewedPlaces()
         else emitOverviewedPlaces()
     }
@@ -120,6 +119,10 @@ class DefaultRepository @Inject constructor(
                 } else updatedError
             }
         }
+    }
+
+    override suspend fun setOverviewedPlacesToLoading() {
+        _overviewedPlaces.value = Loading
     }
 
     override fun resetSuggestedPlaces() {

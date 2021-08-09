@@ -364,6 +364,7 @@ class OverviewViewModel @Inject constructor(
     }
 
     private fun CoroutineScope.emitOverviewedPlaces() = launch(ioDispatcher) {
+        repository.setOverviewedPlacesToLoading()
         delay(100) // Small delay, to give networkManager enough time to check for internet status
         repository.emitOverviewedPlaces(networkManager.hasInternet)
     }
