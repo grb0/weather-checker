@@ -235,10 +235,8 @@ class DefaultRepository @Inject constructor(
     private suspend fun <R, T> onSourceResultArrived(
         result: SourceResult<T>,
         onSuccess: suspend (Success<T>) -> SourceResult<R>
-    ): SourceResult<R> {
-        return when (result) {
-            is Error -> result
-            is Success -> onSuccess(result)
-        }
+    ): SourceResult<R> = when (result) {
+        is Error -> result
+        is Success -> onSuccess(result)
     }
 }

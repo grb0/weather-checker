@@ -1,20 +1,40 @@
 package ba.grbo.weatherchecker.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import ba.grbo.weatherchecker.data.source.Repository
+import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.ui.viewmodels.WeatherCheckerViewModel.AnimationState.*
 import ba.grbo.weatherchecker.util.NetworkManager
+import ba.grbo.weatherchecker.util.SingleSharedFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class WeatherCheckerViewModel @Inject constructor(networkManager: NetworkManager) : ViewModel() {
+class WeatherCheckerViewModel @Inject constructor(
+    @IODispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val networkManager: NetworkManager,
+    private val repository: Repository
+) : ViewModel() {
     val internetStatus = networkManager.internetStatus
 
     private val _internetMissingBannerAnimationState = MutableStateFlow(READY)
     val internetMissingBannerAnimationState: StateFlow<AnimationState>
         get() = _internetMissingBannerAnimationState
+
+    private val _blinkInternetMissingBanner = SingleSharedFlow<Unit>()
+    val blinkInternetMissingBanner: SharedFlow<Unit>
+        get() = _blinkInternetMissingBanner
+
+    private val _requestedRefreshDone = SingleSharedFlow<Unit>()
+    val requestedRefreshDone: SharedFlow<Unit>
+        get() = _requestedRefreshDone
 
     enum class AnimationState {
         READY,
@@ -51,6 +71,14 @@ class WeatherCheckerViewModel @Inject constructor(networkManager: NetworkManager
         }
     }
 
+    fun onRefreshRequested() {
+        viewModelScope.refreshOverviewedPlaces()
+    }
+
+    fun onBlinkBannerRequested() {
+        _blinkInternetMissingBanner.tryEmit(Unit)
+    }
+
     fun onAnimated() {
         _internetMissingBannerAnimationState.value = ANIMATED
     }
@@ -65,5 +93,17 @@ class WeatherCheckerViewModel @Inject constructor(networkManager: NetworkManager
 
     fun onReverseAnimatingInterrupted() {
         _internetMissingBannerAnimationState.value = REVERSE_ANIMATED_WITH_INTERRUPTION
+    }
+
+    private fun CoroutineScope.refreshOverviewedPlaces() = launch(ioDispatcher) {
+        if (networkManager.hasInternet) repository.refreshOverviewedPlaces(::requestedRefreshDone)
+        else {
+            requestedRefreshDone()
+            onBlinkBannerRequested()
+        }
+    }
+
+    private fun requestedRefreshDone() {
+        _requestedRefreshDone.tryEmit(Unit)
     }
 }

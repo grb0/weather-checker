@@ -43,6 +43,7 @@ class WeatherCheckerActivity : AppCompatActivity() {
         setTheme(R.style.Theme_WeatherChecker)
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_weather_checker)
+        setListeners()
         initBannerAnimator()
         viewModel.collectFlows()
     }
@@ -52,7 +53,15 @@ class WeatherCheckerActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-    fun blinkBanner() = bannerAnimator.blink()
+    private fun blinkBanner() = bannerAnimator.blink()
+
+    fun requestBannerBlink() = viewModel.onBlinkBannerRequested()
+
+    private fun setListeners() {
+        binding.weatherCheckerSwipeRefreshLayout.setOnRefreshListener {
+            viewModel.onRefreshRequested()
+        }
+    }
 
     private fun WeatherCheckerViewModel.collectFlows() {
         lifecycleScope.launch {
@@ -70,6 +79,16 @@ class WeatherCheckerActivity : AppCompatActivity() {
                     // Make sure bannerAnimator is initialized first
                     while (!::bannerAnimator.isInitialized) delay(25)
                     internetMissingBannerAnimationState.collect(::onInternetMissingBannerAnimationStateChanged)
+                }
+
+                launch {
+                    requestedRefreshDone.collect {
+                        binding.weatherCheckerSwipeRefreshLayout.isRefreshing = false
+                    }
+                }
+
+                launch {
+                    blinkInternetMissingBanner.collect { blinkBanner() }
                 }
             }
         }
