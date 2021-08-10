@@ -18,8 +18,8 @@
         android:id="@+id/overviewed_place_ripple_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:mrl_rippleBackground="?android:colorBackground"
         android:foreground="@drawable/border_internet_missing_banner"
+        app:mrl_rippleBackground="?android:colorBackground"
         app:mrl_rippleColor="?android:colorPrimary">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -112,26 +112,31 @@
 
             <TextView
                 android:id="@+id/wind"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:fontFamily="@font/roboto"
                 android:text="@{@string/overviewed_place_wind_format(place.forecast.current.windSpeed)}"
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="@+id/weather_description"
+                app:layout_constraintEnd_toEndOf="@+id/visibility"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toEndOf="@+id/weather_description"
                 app:layout_constraintTop_toTopOf="@+id/weather_description"
                 tools:text="Wind: 4.5m/s" />
 
             <TextView
                 android:id="@+id/visibility"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
+                android:layout_marginEnd="12dp"
                 android:fontFamily="@font/roboto"
                 android:text="@{@string/overviewed_place_visibility_format(place.forecast.current.visibility / 1000)}"
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="@+id/feels_like_temp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toEndOf="@+id/feels_like_temp"
                 app:layout_constraintTop_toTopOf="@+id/feels_like_temp"
                 tools:text="Visibility: 4.6km" />
