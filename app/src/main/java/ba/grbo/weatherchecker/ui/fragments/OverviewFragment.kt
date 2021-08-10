@@ -34,7 +34,6 @@ import ba.grbo.weatherchecker.util.*
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import com.orhanobut.logger.Logger
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -493,7 +492,6 @@ class OverviewFragment : Fragment() {
 
     private fun onInternetStatusChanged(hasInternet: Boolean?) {
         hasInternet?.let {
-            Logger.i("internetChanged: $it")
             (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).hasInternet.value = it
         }
     }

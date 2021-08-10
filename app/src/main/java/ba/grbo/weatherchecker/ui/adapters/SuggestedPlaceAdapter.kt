@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.data.models.local.Place
 import ba.grbo.weatherchecker.databinding.SuggestedPlaceBinding
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -50,7 +49,6 @@ class SuggestedPlaceAdapter(
             rippleColor: StateFlow<Int>,
             hasInternet: StateFlow<Boolean>
         ) {
-            Logger.i("bind hasInternet: $hasInternet")
             binding.place = place
             binding.hasInternet = hasInternet
             binding.suggestedPlaceRippleLayout.setRippleColor(rippleColor.value)
