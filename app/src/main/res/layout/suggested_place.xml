@@ -14,12 +14,23 @@
         <variable
             name="hasInternet"
             type="kotlinx.coroutines.flow.StateFlow&lt;Boolean&gt;" />
+
+        <variable
+            name="enabled"
+            type="kotlinx.coroutines.flow.StateFlow&lt;Boolean&gt;" />
+
+        <variable
+            name="rippleColor"
+            type="kotlinx.coroutines.flow.StateFlow&lt;Integer&gt;" />
     </data>
 
     <com.balysv.materialripple.MaterialRippleLayout
         android:id="@+id/suggested_place_ripple_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:enabled="@{enabled}"
+        app:customRippleColor="@{rippleColor}"
+        app:mrl_rippleDelayClick="false">
 
         <TextView
             android:id="@+id/suggested_place"

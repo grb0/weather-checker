@@ -18,6 +18,8 @@
         android:id="@+id/overviewed_place_ripple_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:mrl_rippleRoundedCorners="8dp"
+        app:mrl_rippleOverlay="true"
         android:foreground="@drawable/border_internet_missing_banner"
         app:mrl_rippleBackground="?android:colorBackground"
         app:mrl_rippleColor="?android:colorPrimary">

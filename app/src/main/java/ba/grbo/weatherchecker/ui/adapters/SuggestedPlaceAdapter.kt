@@ -18,13 +18,14 @@ class SuggestedPlaceAdapter(
     private val viewLifecyclerOwner: LifecycleOwner
 ) : ListAdapter<Place, SuggestedPlaceAdapter.SuggestedPlaceHolder>(PlaceDiffCallbacks()) {
     var hasInternet = MutableStateFlow(false)
+    var enabled = MutableStateFlow(true)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuggestedPlaceHolder {
         return SuggestedPlaceHolder.from(parent, viewLifecyclerOwner)
     }
 
     override fun onBindViewHolder(holder: SuggestedPlaceHolder, position: Int) {
-        holder.bind(getItem(position), onClick, rippleColor, hasInternet)
+        holder.bind(getItem(position), onClick, rippleColor, enabled, hasInternet)
     }
 
     class SuggestedPlaceHolder private constructor(
@@ -47,12 +48,14 @@ class SuggestedPlaceAdapter(
             place: Place,
             onClick: (Place) -> Unit,
             rippleColor: StateFlow<Int>,
+            enabled: StateFlow<Boolean>,
             hasInternet: StateFlow<Boolean>
         ) {
             binding.place = place
             binding.hasInternet = hasInternet
-            binding.suggestedPlaceRippleLayout.setRippleColor(rippleColor.value)
-            binding.root.setOnClickListener { onClick(place) }
+            binding.enabled = enabled
+            binding.rippleColor = rippleColor
+            binding.suggestedPlaceRippleLayout.setOnClickListener { onClick(place) }
             binding.executePendingBindings()
         }
     }

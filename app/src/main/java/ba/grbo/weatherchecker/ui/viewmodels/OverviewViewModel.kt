@@ -14,11 +14,8 @@ import ba.grbo.weatherchecker.util.OnImageLoadingError
 import ba.grbo.weatherchecker.util.SingleSharedFlow
 import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import javax.inject.Inject
 
@@ -133,6 +130,10 @@ class OverviewViewModel @Inject constructor(
     private val _swipeToRefreshEnabled = MutableStateFlow<Boolean?>(null)
     val swipeToRefreshEnabled: StateFlow<Boolean?>
         get() = _swipeToRefreshEnabled
+
+    private val _suggestedPlacesEnabled = MutableStateFlow<Boolean?>(null)
+    val suggestedPlacesEnabled: StateFlow<Boolean?>
+        get() = _suggestedPlacesEnabled
 
     private var isVerticalDividerShown = false
     private var wasVerticalDidiverHidden = false
@@ -312,6 +313,7 @@ class OverviewViewModel @Inject constructor(
         hideEmptySuggestedPlacesInfo()
         showSuggestedPlacesCard()
         showSuggestedPlaces()
+        enableSuggestedPlaces()
     }
 
     private fun showOnlyEmptySuggestedPlacesInfo() {
@@ -501,8 +503,24 @@ class OverviewViewModel @Inject constructor(
     }
 
     fun onSuggestedPlaceClicked(suggestedPlace: Place) {
-        if (!networkManager.hasInternet && !suggestedPlace.cached) blinkInternetMissingBanner()
-        else viewModelScope.emitOverviewedPlaces(suggestedPlace, overviewedPlacesSize + 1)
+        disableSuggestedPlaces()
+        viewModelScope.onSuggestedPlaceClickedDelayed(suggestedPlace)
+    }
+
+    private fun CoroutineScope.onSuggestedPlaceClickedDelayed(suggestedPlace: Place) = launch {
+        delay(350) // We manually wait for the ripple animation to finish
+        if (!networkManager.hasInternet && !suggestedPlace.cached) {
+            blinkInternetMissingBanner()
+            enableSuggestedPlaces()
+        } else emitOverviewedPlaces(suggestedPlace, overviewedPlacesSize + 1)
+    }
+
+    private fun enableSuggestedPlaces() {
+        _suggestedPlacesEnabled.value = true
+    }
+
+    private fun disableSuggestedPlaces() {
+        _suggestedPlacesEnabled.value = false
     }
 
     fun onOverviewedPlacesScrolled(verticalOffset: Int) {
@@ -568,10 +586,10 @@ class OverviewViewModel @Inject constructor(
         repository.removeOverviewedPlace(place, onSuccess)
     }
 
-    private fun CoroutineScope.emitOverviewedPlaces(
+    private suspend fun emitOverviewedPlaces(
         place: Place,
         overviewedPlacesSize: Int
-    ) = launch(ioDispatcher) {
+    ) = withContext(ioDispatcher) {
         repository.addOverviewedPlace(place, overviewedPlacesSize, networkManager.hasInternet)
     }
 

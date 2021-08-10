@@ -7,6 +7,7 @@ import androidx.databinding.BindingAdapter
 import ba.grbo.weatherchecker.R
 import ba.grbo.weatherchecker.util.OnImageLoadingError
 import coil.load
+import com.balysv.materialripple.MaterialRippleLayout
 
 @BindingAdapter("startDrawable", "endDrawable", requireAll = true)
 fun TextView.bindStartAndEndDrawable(
@@ -28,4 +29,9 @@ fun ImageView.bindLoadedImage(iconCode: String, onError: OnImageLoadingError) {
 @BindingAdapter("imgSrc")
 fun ImageView.bindImage(@DrawableRes imgSrc: Int) {
     setImageResource(imgSrc)
+}
+
+@BindingAdapter("customRippleColor")
+fun MaterialRippleLayout.bindRippleColor(color: Int) {
+    setRippleColor(color)
 }

@@ -364,6 +364,14 @@ class OverviewFragment : Fragment() {
                         }
                     }
                 }
+
+                launch {
+                    suggestedPlacesEnabled.collect { enabled ->
+                        enabled?.let {
+                            (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).enabled.value = it
+                        }
+                    }
+                }
             }
         }
     }
@@ -520,12 +528,7 @@ class OverviewFragment : Fragment() {
 
     @Suppress("NotifyDataSetChanged")
     private fun setRippleColor(color: Int) {
-        (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).run {
-            rippleColor.value = color
-            // To trigger rebind, since viewport size is changing based on whether the keyboard
-            // is shown or not cannot rely on notifyItemRangeChanged method.
-            notifyDataSetChanged()
-        }
+        (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).rippleColor.value = color
     }
 
     private fun onLocationSearcherUnfocused() {
