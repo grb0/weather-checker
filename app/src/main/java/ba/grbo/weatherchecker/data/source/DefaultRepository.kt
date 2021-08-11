@@ -44,10 +44,21 @@ class DefaultRepository @Inject constructor(
         hasInternet: Boolean
     ) {
         setOverviewedPlacesToLoading()
-        _overviewedPlaces.value = if (hasInternet) getOverviewedPlacesFromNetwork(
-            place,
-            overviewedPlacesSize
-        ) else getOverviewedPlacesFromDatabase(place, overviewedPlacesSize)
+        _overviewedPlaces.value =
+            onSourceResultArrived(localDataSource.getOverviewedPlaces()) { places ->
+                val index = places.data.indexOfFirst { it.coordinate == place.coordinate }
+                when {
+                    index != -1 -> {
+                        if (hasInternet) getOverviewedPlacesFromNetwork(index, place)
+                        else getOverviewedPlacesFromDatabase(index)
+                    }
+                    hasInternet -> getOverviewedPlacesFromNetwork(
+                        place,
+                        overviewedPlacesSize
+                    )
+                    else -> getOverviewedPlacesFromDatabase(place, overviewedPlacesSize)
+                }
+            }
     }
 
     override suspend fun removeOverviewedPlace(place: Place, onSuccess: () -> Unit) {
@@ -86,7 +97,16 @@ class DefaultRepository @Inject constructor(
     }
 
     override suspend fun swapOverviewedPlaces(places: List<Place>, topToBottom: Boolean) {
-        val updatedPlaces = if (topToBottom) places.mapIndexed { index, place ->
+        val updatedPlaces = swapOverviwedPlaces(places, topToBottom)
+        _overviewedPlaces.value =
+            onSourceResultArrived(localDataSource.updatePlaces(updatedPlaces)) { updated ->
+                if (updated.data) getOverviewedPlaces()
+                else updatedError
+            }
+    }
+
+    private fun swapOverviwedPlaces(places: List<Place>, topToBottom: Boolean): List<Place> {
+        return if (topToBottom) places.mapIndexed { index, place ->
             if (index == 0) place.copy(overviewedPosition = places[places.lastIndex].overviewedPosition)
             else place.copy(overviewedPosition = place.overviewedPosition?.plus(1))
         } else places.mapIndexed { index, place ->
@@ -94,11 +114,6 @@ class DefaultRepository @Inject constructor(
                 place.copy(overviewedPosition = places[0].overviewedPosition)
             } else place.copy(overviewedPosition = place.overviewedPosition?.minus(1))
         }
-        _overviewedPlaces.value =
-            onSourceResultArrived(localDataSource.updatePlaces(updatedPlaces)) { updated ->
-                if (updated.data) getOverviewedPlaces()
-                else updatedError
-            }
     }
 
     override suspend fun updateOverviewedPositions() {
@@ -191,6 +206,19 @@ class DefaultRepository @Inject constructor(
     }
 
     private suspend fun getOverviewedPlacesFromNetwork(
+        index: Int,
+        place: Place,
+    ): SourceResult<List<Place>> {
+        val (lat, lon) = place.coordinate
+        return onSourceResultArrived(remoteDataSource.getForecast(lat, lon)) { forecast ->
+            val updatedPlace = place.copy(forecast = forecast.data)
+            onSourceResultArrived(localDataSource.updatePlace(updatedPlace)) { updated ->
+                if (updated.data) getOverviewedPlacesFromDatabase(index) else updatedError
+            }
+        }
+    }
+
+    private suspend fun getOverviewedPlacesFromNetwork(
         place: Place,
         overviewedPlacesSize: Int
     ): SourceResult<List<Place>> {
@@ -202,6 +230,24 @@ class DefaultRepository @Inject constructor(
                 overviewedPosition = overviewedPlacesSize
             )
             updatePlaceAndGetOverviewedPlacesFromDatabase(updatedPlace)
+        }
+    }
+
+    private suspend fun getOverviewedPlacesFromDatabase(
+        index: Int
+    ): SourceResult<List<Place>> {
+        return onSourceResultArrived(localDataSource.getOverviewedPlaces()) { places ->
+            if (places.data.size > 1) {
+                val updatedPlaces = swapOverviwedPlaces(
+                    places.data.subList(0, index + 1),
+                    false
+                )
+                onSourceResultArrived(localDataSource.updatePlaces(updatedPlaces)) { updated ->
+                    if (updated.data) {
+                        onSourceResultArrived(localDataSource.getOverviewedPlaces()) { places -> places }
+                    } else updatedError
+                }
+            } else places
         }
     }
 

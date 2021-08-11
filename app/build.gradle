@@ -71,7 +71,7 @@ dependencies {
     // endregion
 
     // region Safe way to collect Flows
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-alpha03'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-alpha03"
     // endregion
 
     // region Hilt
