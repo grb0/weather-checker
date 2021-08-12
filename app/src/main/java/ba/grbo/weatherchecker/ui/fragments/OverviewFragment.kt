@@ -124,9 +124,44 @@ class OverviewFragment : Fragment() {
                         toPosition: Int,
                         itemCount: Int
                     ) {
-                        if (fromPosition == 0 || toPosition == 0) binding.overviewedPlaces.scrollToPosition(
-                            0
-                        )
+                        if (fromPosition == 0 || toPosition == 0) {
+                            binding.overviewedPlaces.scrollToPosition(0)
+                        }
+                    }
+
+                    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                        onItemRangeRemovedOrInserted(positionStart)
+
+                    }
+
+                    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                        if (viewModel.wasUndone) {
+                            if (!binding.overviewedPlaces.canScrollVertically(1)) {
+                                val adapter =
+                                    binding.overviewedPlaces.adapter as OverviewedPlaceAdapter
+                                val lastPosition = adapter.itemCount - 1
+                                binding.overviewedPlaces.scrollToPosition(lastPosition)
+                            } else onItemRangeRemovedOrInserted(positionStart)
+                        }
+                    }
+
+                    // We call viewModel.onOverviewedPlacesScrolled(0), because sometimes when
+                    // we scroll to 0 in these two methods underneath, vertical offset in
+                    // onScrolled listener set above won't be calculated correctly and
+                    // vertical divider will be schown even though we're at the very top of the
+                    // recycler view.
+                    private fun onItemRangeRemovedOrInserted(positionStart: Int) {
+                        if (positionStart == 0 || positionStart == 1) {
+                            binding.overviewedPlaces.scrollToPosition(0)
+                            viewModel.onOverviewedPlacesScrolled(0)
+                        } else {
+                            val adapter = binding.overviewedPlaces.adapter as OverviewedPlaceAdapter
+                            val lastPosition = adapter.itemCount - 1
+                            val secondLastPosition = adapter.itemCount - 2
+                            if (positionStart == lastPosition || positionStart == secondLastPosition) {
+                                binding.overviewedPlaces.scrollToPosition(lastPosition)
+                            }
+                        }
                     }
                 })
             }
@@ -171,8 +206,11 @@ class OverviewFragment : Fragment() {
             recyclerView: RecyclerView,
             viewHolder: RecyclerView.ViewHolder
         ): Int {
-            return if (viewHolder.adapterPosition % 2 == 0) ItemTouchHelper.START
-            else ItemTouchHelper.END
+            return when {
+                isPortrait() -> super.getSwipeDirs(recyclerView, viewHolder)
+                viewHolder.adapterPosition % 2 == 0 -> ItemTouchHelper.START
+                else -> ItemTouchHelper.END
+            }
         }
 
         override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {

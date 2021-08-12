@@ -141,7 +141,10 @@ class OverviewViewModel @Inject constructor(
     private var overviewedPlacesSize = 0
 
     private var removedOverviewedPlace: Place? = null
-    private var wasUndone = false
+
+    private var _wasUndone = false
+    val wasUndone: Boolean
+        get() = _wasUndone
 
     init {
         viewModelScope.emitOverviewedPlaces()
@@ -479,7 +482,7 @@ class OverviewViewModel @Inject constructor(
     fun onUndoRemovedOverviewedPlace() {
         removedOverviewedPlace?.let {
             viewModelScope.undoRemovedOverviewedPlace(it) {
-                wasUndone = true
+                _wasUndone = true
                 removedOverviewedPlace = null
             }
         }
@@ -498,7 +501,7 @@ class OverviewViewModel @Inject constructor(
     }
 
     fun onOverviewedPlacesChanged() {
-        if (wasUndone) wasUndone = false
+        if (_wasUndone) _wasUndone = false
         else _scrollOverviewedPlacesToTop.tryEmit(Unit)
     }
 
