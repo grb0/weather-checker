@@ -23,6 +23,8 @@ interface Repository {
 
     suspend fun swapOverviewedPlaces(places: List<Place>, topToBottom: Boolean)
 
+    suspend fun swapOverviewedPlaces(fromPlace: Place, toPlace: Place)
+
     suspend fun updateOverviewedPositions()
 
     suspend fun refreshOverviewedPlaces(onSuccess: () -> Unit)

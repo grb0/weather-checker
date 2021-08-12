@@ -259,6 +259,8 @@
         <entry key="app/src/main/res/drawable/ic_zimbabwe.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/scrollbar_suggested_places.xml" value="0.3925925925925926" />
         <entry key="app/src/main/res/drawable/scrollbar_suggested_places_f.xml" value="0.3925925925925926" />
+        <entry key="app/src/main/res/layout-land/fragment_overview.xml" value="0.5061439438267993" />
+        <entry key="app/src/main/res/layout-land/overviewed_place.xml" value="0.5801475519785378" />
         <entry key="app/src/main/res/layout/activity_weather_checker.xml" value="0.34444444444444444" />
         <entry key="app/src/main/res/layout/fragment_overview.xml" value="0.34444444444444444" />
         <entry key="app/src/main/res/layout/overviewed_place.xml" value="0.4401041666666667" />

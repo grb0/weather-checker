@@ -2,6 +2,7 @@ package ba.grbo.weatherchecker.ui.fragments
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Point
 import android.graphics.Rect
@@ -32,6 +33,7 @@ import ba.grbo.weatherchecker.ui.adapters.SuggestedPlaceAdapter
 import ba.grbo.weatherchecker.ui.viewmodels.OverviewViewModel
 import ba.grbo.weatherchecker.util.*
 import ba.grbo.weatherchecker.util.Constants.EMPTY_STRING
+import ba.grbo.weatherchecker.util.RecyclerViewSwipeDecorator.Direction
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -129,15 +131,16 @@ class OverviewFragment : Fragment() {
                 })
             }
 
-            addItemDecoration(
-                VerticalSpacingItemDecoration(16f.toDp(resources))
-            )
+            addItemDecoration(VerticalSpacingItemDecoration(16f.toDp(resources), isPortrait()))
         }
     }
 
+    private fun isPortrait() =
+        resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     private fun getSimpleCallback(): SimpleCallback = object : SimpleCallback(
         ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.START or ItemTouchHelper.END,
-        ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT
+        ItemTouchHelper.START or ItemTouchHelper.END
     ) {
         var startFromPosition: Int? = null
         var endToPosition: Int? = null
@@ -164,6 +167,15 @@ class OverviewFragment : Fragment() {
             viewModel.onOverviewedPlacesSwiped(viewHolder.adapterPosition)
         }
 
+        override fun getSwipeDirs(
+            recyclerView: RecyclerView,
+            viewHolder: RecyclerView.ViewHolder
+        ): Int {
+            val position = recyclerView.getChildAdapterPosition(viewHolder.itemView)
+            return if (position % 2 == 0) ItemTouchHelper.START
+            else ItemTouchHelper.END
+        }
+
         override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
             super.onSelectedChanged(viewHolder, actionState)
             when (actionState) {
@@ -179,7 +191,7 @@ class OverviewFragment : Fragment() {
                     if (lastActionState == ItemTouchHelper.ACTION_STATE_DRAG) {
                         startFromPosition?.let { from ->
                             endToPosition?.let { to ->
-                                viewModel.onOverviewedPlacesMoved(from, to)
+                                viewModel.onOverviewedPlacesMoved(from, to, isPortrait())
                                 viewModel.onDraggingFinished()
                             }
                         }
@@ -197,16 +209,35 @@ class OverviewFragment : Fragment() {
             actionState: Int,
             isCurrentlyActive: Boolean
         ) {
+            if (isPortrait()) {
+                RecyclerViewSwipeDecorator(
+                    c,
+                    recyclerView,
+                    viewHolder,
+                    dX,
+                    actionState
+                ).decorate()
+            } else {
+                val position = recyclerView.getChildAdapterPosition(viewHolder.itemView)
+                RecyclerViewSwipeDecorator(
+                    c,
+                    recyclerView,
+                    viewHolder,
+                    dX,
+                    actionState,
+                    if (position % 2 == 0) Direction.LEFT else Direction.RIGHT
+                ).decorate()
+            }
 
-            RecyclerViewSwipeDecorator(
+            super.onChildDraw(
                 c,
                 recyclerView,
                 viewHolder,
                 dX,
-                actionState
-            ).decorate()
-
-            super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                dY,
+                actionState,
+                isCurrentlyActive
+            )
         }
     }
 
@@ -368,7 +399,8 @@ class OverviewFragment : Fragment() {
                 launch {
                     suggestedPlacesEnabled.collect { enabled ->
                         enabled?.let {
-                            (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).enabled.value = it
+                            (binding.suggestedPlaces.adapter as SuggestedPlaceAdapter).enabled.value =
+                                it
                         }
                     }
                 }

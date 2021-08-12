@@ -533,19 +533,27 @@ class OverviewViewModel @Inject constructor(
         }
     }
 
-    fun onOverviewedPlacesMoved(fromPosition: Int, toPosition: Int) {
-        val placesToUpdate = mutableListOf<Place>()
-        var topToBottom = false
-        if (fromPosition < toPosition) {
-            _overviewedPlaces.value?.forEachIndexed { index, place ->
-                if (index in fromPosition..toPosition) placesToUpdate.add(place)
+    fun onOverviewedPlacesMoved(fromPosition: Int, toPosition: Int, isPortrait: Boolean) {
+        if (isPortrait) {
+            val placesToUpdate = mutableListOf<Place>()
+            var topToBottom = false
+            if (fromPosition < toPosition) {
+                _overviewedPlaces.value?.forEachIndexed { index, place ->
+                    if (index in fromPosition..toPosition) placesToUpdate.add(place)
+                }
+                topToBottom = true
+            } else _overviewedPlaces.value?.forEachIndexed { index, place ->
+                if (index in fromPosition downTo toPosition) placesToUpdate.add(place)
             }
-            topToBottom = true
-        } else _overviewedPlaces.value?.forEachIndexed { index, place ->
-            if (index in fromPosition downTo toPosition) placesToUpdate.add(place)
-        }
 
-        viewModelScope.swapOverviewedPlaces(placesToUpdate, topToBottom)
+            viewModelScope.swapOverviewedPlaces(placesToUpdate, topToBottom)
+        } else {
+            val fromPlace = _overviewedPlaces.value?.get(fromPosition)
+            val toPlace = _overviewedPlaces.value?.get(toPosition)
+            if (fromPlace != null && toPlace != null) {
+                viewModelScope.swapOverviewedPlaces(fromPlace, toPlace)
+            }
+        }
     }
 
     fun onDraggingStarted() {
@@ -570,6 +578,13 @@ class OverviewViewModel @Inject constructor(
         topToBottom: Boolean
     ) = launch(ioDispatcher) {
         repository.swapOverviewedPlaces(places, topToBottom)
+    }
+
+    private fun CoroutineScope.swapOverviewedPlaces(
+        fromPlace: Place,
+        toPlace: Place
+    ) = launch(ioDispatcher) {
+        repository.swapOverviewedPlaces(fromPlace, toPlace)
     }
 
     private fun CoroutineScope.undoRemovedOverviewedPlace(

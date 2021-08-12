@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import ba.grbo.weatherchecker.R
+import ba.grbo.weatherchecker.util.RecyclerViewSwipeDecorator.Direction.*
 
 // Credits go to the author of this repository https://github.com/xabaras/RecyclerViewSwipeDecorator
 // as I took his code, converted it to Kotlin and modified it so it draws rounded corners.
@@ -17,7 +18,13 @@ class RecyclerViewSwipeDecorator(
     private val viewHolder: RecyclerView.ViewHolder,
     private val dX: Float,
     private val actionState: Int,
+    private val direction: Direction = RIGHT_AND_LEFT
 ) {
+    enum class Direction {
+        RIGHT,
+        LEFT,
+        RIGHT_AND_LEFT
+    }
 
     private val swipeBackgroundColor = ContextCompat.getColor(
         recyclerView.context,
@@ -44,7 +51,7 @@ class RecyclerViewSwipeDecorator(
 
     fun decorate() {
         if (actionState != ItemTouchHelper.ACTION_STATE_SWIPE) return
-        if (dX > 0) {
+        if (dX > 0 && (direction == RIGHT_AND_LEFT || direction == RIGHT)) {
             // Swiping Right
             canvas.clipRect(
                 viewHolder.itemView.left,
@@ -103,7 +110,7 @@ class RecyclerViewSwipeDecorator(
                     textPaint
                 )
             }
-        } else if (dX < 0) {
+        } else if (dX < 0 && (direction == RIGHT_AND_LEFT || direction == LEFT)) {
             // Swiping Left
             canvas.clipRect(
                 viewHolder.itemView.right + dX.toInt(),

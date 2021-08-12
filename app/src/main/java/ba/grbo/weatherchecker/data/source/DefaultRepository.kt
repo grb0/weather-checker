@@ -105,6 +105,18 @@ class DefaultRepository @Inject constructor(
             }
     }
 
+    override suspend fun swapOverviewedPlaces(fromPlace: Place, toPlace: Place) {
+        val updatedFromPlace = fromPlace.copy(overviewedPosition = toPlace.overviewedPosition)
+        val updatedToPlace = toPlace.copy(overviewedPosition = fromPlace.overviewedPosition)
+        val placesToUpdate = listOf(updatedFromPlace, updatedToPlace)
+
+        _overviewedPlaces.value =
+            onSourceResultArrived(localDataSource.updatePlaces(placesToUpdate)) { updated ->
+                if (updated.data) getOverviewedPlaces()
+                else updatedError
+            }
+    }
+
     private fun swapOverviwedPlaces(places: List<Place>, topToBottom: Boolean): List<Place> {
         return if (topToBottom) places.mapIndexed { index, place ->
             if (index == 0) place.copy(overviewedPosition = places[places.lastIndex].overviewedPosition)
