@@ -18,7 +18,7 @@ class RecyclerViewSwipeDecorator(
     private val viewHolder: RecyclerView.ViewHolder,
     private val dX: Float,
     private val actionState: Int,
-    private val direction: Direction = RIGHT_AND_LEFT
+    private val direction: Direction
 ) {
     enum class Direction {
         RIGHT,

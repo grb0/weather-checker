@@ -171,8 +171,7 @@ class OverviewFragment : Fragment() {
             recyclerView: RecyclerView,
             viewHolder: RecyclerView.ViewHolder
         ): Int {
-            val position = recyclerView.getChildAdapterPosition(viewHolder.itemView)
-            return if (position % 2 == 0) ItemTouchHelper.START
+            return if (viewHolder.adapterPosition % 2 == 0) ItemTouchHelper.START
             else ItemTouchHelper.END
         }
 
@@ -209,25 +208,20 @@ class OverviewFragment : Fragment() {
             actionState: Int,
             isCurrentlyActive: Boolean
         ) {
-            if (isPortrait()) {
-                RecyclerViewSwipeDecorator(
-                    c,
-                    recyclerView,
-                    viewHolder,
-                    dX,
-                    actionState
-                ).decorate()
-            } else {
-                val position = recyclerView.getChildAdapterPosition(viewHolder.itemView)
-                RecyclerViewSwipeDecorator(
-                    c,
-                    recyclerView,
-                    viewHolder,
-                    dX,
-                    actionState,
-                    if (position % 2 == 0) Direction.LEFT else Direction.RIGHT
-                ).decorate()
+            val direction = when {
+                isPortrait() -> Direction.RIGHT_AND_LEFT
+                viewHolder.adapterPosition % 2 == 0 -> Direction.LEFT
+                else -> Direction.RIGHT
             }
+
+            RecyclerViewSwipeDecorator(
+                c,
+                recyclerView,
+                viewHolder,
+                dX,
+                actionState,
+                direction
+            ).decorate()
 
             super.onChildDraw(
                 c,
