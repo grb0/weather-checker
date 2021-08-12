@@ -136,7 +136,8 @@ class OverviewFragment : Fragment() {
 
                     override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                         if (viewModel.wasUndone) {
-                            if (!binding.overviewedPlaces.canScrollVertically(1)) {
+                            if (!binding.overviewedPlaces.canScrollVertically(1) &&
+                                    binding.overviewedPlaces.canScrollVertically(-1)) {
                                 val adapter =
                                     binding.overviewedPlaces.adapter as OverviewedPlaceAdapter
                                 val lastPosition = adapter.itemCount - 1
