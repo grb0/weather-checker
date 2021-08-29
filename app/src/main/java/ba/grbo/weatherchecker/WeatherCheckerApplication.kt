@@ -1,7 +1,8 @@
 package ba.grbo.weatherchecker
 
 import android.app.Application
-import ba.grbo.weatherchecker.util.Trees
+import ba.grbo.weatherchecker.util.Tree.Companion.DEBUG_TREE
+import ba.grbo.weatherchecker.util.Tree.Companion.RELEASE_TREE
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -17,9 +18,8 @@ class WeatherCheckerApplication : Application() {
     }
 
     private fun initTimber() {
-        Timber.plant(if (BuildConfig.DEBUG) Trees.Debug else Trees.Release)
+        Timber.plant(if (BuildConfig.DEBUG) Timber.DEBUG_TREE else Timber.RELEASE_TREE)
     }
-
 
     override fun onLowMemory() {
         super.onLowMemory()
