@@ -12,11 +12,11 @@ import ba.grbo.weatherchecker.util.Constants.SEARCHER_DEBOUNCE_PERIOD
 import ba.grbo.weatherchecker.util.NetworkManager
 import ba.grbo.weatherchecker.util.OnImageLoadingError
 import ba.grbo.weatherchecker.util.SingleSharedFlow
-import com.orhanobut.logger.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import retrofit2.HttpException
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -451,9 +451,9 @@ class OverviewViewModel @Inject constructor(
     @Suppress("UNUSED_PARAMETER")
     private fun notifyUserOfError(exception: Exception) {
         _exceptionSnackbarShown.value = true
-        Logger.i("original: $exception")
+        Timber.e("original: $exception")
         exception.suppressed.forEach {
-            Logger.i("suppressed: $it")
+            Timber.e("suppressed: $it")
         }
     }
 

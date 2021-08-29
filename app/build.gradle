@@ -55,8 +55,8 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:3.4.0"
     // endregion
 
-    // region Logger
-    implementation "com.github.orhanobut:logger:$logger_version"
+    // region Timber
+    implementation "com.jakewharton.timber:timber:$timber_version"
     // endregion
 
     // region Navigation

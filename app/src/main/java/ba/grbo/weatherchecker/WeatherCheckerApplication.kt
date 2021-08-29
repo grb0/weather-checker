@@ -1,12 +1,11 @@
 package ba.grbo.weatherchecker
 
 import android.app.Application
-import ba.grbo.weatherchecker.util.CustomFormatStrategy
-import com.orhanobut.logger.AndroidLogAdapter
-import com.orhanobut.logger.Logger
+import ba.grbo.weatherchecker.util.Trees
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import timber.log.Timber
 
 @HiltAndroidApp
 class WeatherCheckerApplication : Application() {
@@ -14,12 +13,13 @@ class WeatherCheckerApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        initializeLogger()
+        initTimber()
     }
 
-    private fun initializeLogger() {
-        if (BuildConfig.DEBUG) Logger.addLogAdapter(AndroidLogAdapter(CustomFormatStrategy()))
+    private fun initTimber() {
+        Timber.plant(if (BuildConfig.DEBUG) Trees.Debug else Trees.Release)
     }
+
 
     override fun onLowMemory() {
         super.onLowMemory()

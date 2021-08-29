@@ -1,7 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext.kotlin_version = "1.5.30"
-    ext.logger_version = "-SNAPSHOT"
+    ext.timber_version = "5.0.1"
     ext.navigation_version = "2.3.5"
     ext.keyboard_version = "3.0.0-RC3"
     ext.kotlin_coroutines_version = "1.5.1"
@@ -27,7 +27,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' } // For custom jitpack built logger version
     }
 }
 
