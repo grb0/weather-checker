@@ -17,12 +17,12 @@ class WeatherCheckerApplication : Application() {
         initTimber()
     }
 
-    private fun initTimber() {
-        Timber.plant(if (BuildConfig.DEBUG) Timber.DEBUG_TREE else Timber.RELEASE_TREE)
-    }
-
     override fun onLowMemory() {
         super.onLowMemory()
         scope.cancel()
+    }
+
+    private fun initTimber() {
+        Timber.plant(if (BuildConfig.DEBUG) Timber.DEBUG_TREE else Timber.RELEASE_TREE)
     }
 }

@@ -34,8 +34,11 @@ fun Long.toFormattedDate(locale: Locale): String = SimpleDateFormat(
     locale
 ).format(Date(this))
 
-fun Long.toFormattedTime(locale: Locale): String = SimpleDateFormat.getTimeInstance(
-    SimpleDateFormat.SHORT,
+fun Long.toFormattedTime(
+    style: Int = SimpleDateFormat.SHORT,
+    locale: Locale
+): String = SimpleDateFormat.getTimeInstance(
+    style,
     locale
 ).format(Date(this))
 
