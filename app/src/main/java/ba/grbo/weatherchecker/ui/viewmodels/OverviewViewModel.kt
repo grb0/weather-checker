@@ -472,7 +472,6 @@ class OverviewViewModel @Inject constructor(
             showOverviewPlacesCard()
             notifyUserOfError(exception)
         }
-
     }
 
     fun onExceptionSnackbarMessageAcknowledge() {

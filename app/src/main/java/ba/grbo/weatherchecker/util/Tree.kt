@@ -79,11 +79,15 @@ open class Tree private constructor() : Timber.DebugTree() {
             }
 
             private fun reportToFirebase(message: String, t: Throwable?) {
+                recordExceptionToCrashlytics(message, t)
+                recordExceptionToFirestore(message, t)
+            }
+
+            private fun recordExceptionToCrashlytics(message: String, t: Throwable?) {
                 FirebaseCrashlytics.getInstance().run {
                     log(message)
                     if (t != null) recordException(t)
                 }
-                recordExceptionToFirestore(message, t)
             }
 
             private fun recordExceptionToFirestore(message: String, t: Throwable?) {
