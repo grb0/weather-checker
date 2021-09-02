@@ -1,28 +1,27 @@
 package ba.grbo.weatherchecker
 
 import android.app.Application
-import ba.grbo.weatherchecker.util.Tree.Companion.DEBUG_TREE
-import ba.grbo.weatherchecker.util.Tree.Companion.RELEASE_TREE
+import ba.grbo.weatherchecker.util.Logger
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
-import timber.log.Timber
+import javax.inject.Inject
 
 @HiltAndroidApp
 class WeatherCheckerApplication : Application() {
-    val scope = MainScope()
+    @Inject
+    lateinit var scope: CoroutineScope
+
+    @Inject
+    lateinit var logger: Logger
 
     override fun onCreate() {
         super.onCreate()
-        initTimber()
+        logger.init()
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
         scope.cancel()
-    }
-
-    private fun initTimber() {
-        Timber.plant(if (BuildConfig.DEBUG) Timber.DEBUG_TREE else Timber.RELEASE_TREE)
     }
 }
