@@ -6,10 +6,10 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicInteger
 
-open class Tree private constructor() : Timber.DebugTree() {
+abstract class Tree private constructor() : Timber.DebugTree() {
     private lateinit var element: StackTraceElement
 
-    private val StackTraceElement.info: String
+    protected val StackTraceElement.info: String
         get() = String.format(
             "%s.%s (%s:%s)",
             className.substring(className.lastIndexOf(".") + 1),
@@ -24,6 +24,11 @@ open class Tree private constructor() : Timber.DebugTree() {
             val index = stackTrace.indexOf(this)
             return stackTrace[index + 1]
         }
+
+    protected val Throwable.throwableMessage: String
+        get() = "${stackTrace[0].info} - ${this::class.simpleName}"
+
+    abstract protected val Throwable.throwableMessages: String
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         super.log(priority, tag, createModifiedMessage(message, priority), t)
@@ -59,6 +64,23 @@ open class Tree private constructor() : Timber.DebugTree() {
         private val DEBUG: Tree = object : Tree() {
             private var counter = AtomicInteger(1)
 
+            override val Throwable.throwableMessages: String
+                get() {
+                    val sB = StringBuilder(throwableMessage + "\n  suppressed:")
+                    suppressed.forEachIndexed { i, t ->
+                        sB.append("\n             ${i + 1}. ${t.throwableMessage}")
+                    }
+                    return sB.toString()
+                }
+
+            override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+                if (priority == Log.ERROR && t != null) {
+                    // Passing null as throwable since we don't want to pollute the message with
+                    // its stackTrace
+                    super.log(priority, tag, t.throwableMessages, null)
+                } else super.log(priority, tag, message, t)
+            }
+
             override fun createModifiedMessage(
                 message: String,
                 priority: Int
@@ -70,6 +92,15 @@ open class Tree private constructor() : Timber.DebugTree() {
         }
 
         private val RELEASE: Tree = object : Tree() {
+            override val Throwable.throwableMessages: String
+                get() {
+                    val sB = StringBuilder(throwableMessage + " | suppressed:")
+                    suppressed.forEachIndexed { i, t ->
+                        sB.append(" ${i + 1}. ${t.throwableMessage} |")
+                    }
+                    return sB.toString()
+                }
+
             override fun log(
                 priority: Int,
                 tag: String?,
@@ -78,7 +109,9 @@ open class Tree private constructor() : Timber.DebugTree() {
             ) {
                 if (priority == Log.ERROR) t?.let {
                     FirebaseCrashlytics.getInstance().run {
-                        log(createModifiedMessage(message, priority))
+                        // Since recordException is not taking care of possible suppressed
+                        // exceptions, we log those manually
+                        log(createModifiedMessage(t.throwableMessages, priority))
                         recordException(t)
                     }
                 }
