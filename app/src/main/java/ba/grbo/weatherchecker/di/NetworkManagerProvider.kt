@@ -5,20 +5,26 @@ import ba.grbo.weatherchecker.util.NetworkManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.ActivityRetainedLifecycle
+import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-import javax.inject.Singleton
+import kotlinx.coroutines.cancel
 
-@InstallIn(SingletonComponent::class)
+@InstallIn(ActivityRetainedComponent::class)
 @Module
 object NetworkManagerProvider {
-    @Singleton
+    @ActivityRetainedScoped
     @Provides
-    fun provideApplicationScope(): CoroutineScope = MainScope()
+    fun provideCoroutineScope(component: ActivityRetainedLifecycle): CoroutineScope {
+        val scope = MainScope()
+        component.addOnClearedListener { scope.cancel() }
+        return scope
+    }
 
-    @Singleton
+    @ActivityRetainedScoped
     @Provides
     fun provideNetworkManager(
         application: Application,

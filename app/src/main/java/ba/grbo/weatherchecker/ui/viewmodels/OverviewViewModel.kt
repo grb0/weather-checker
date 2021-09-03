@@ -9,6 +9,7 @@ import ba.grbo.weatherchecker.data.source.Result.SourceResult.Error
 import ba.grbo.weatherchecker.data.source.Result.SourceResult.Success
 import ba.grbo.weatherchecker.di.IODispatcher
 import ba.grbo.weatherchecker.util.Constants.SEARCHER_DEBOUNCE_PERIOD
+import ba.grbo.weatherchecker.util.DefaultLogger
 import ba.grbo.weatherchecker.util.NetworkManager
 import ba.grbo.weatherchecker.util.OnImageLoadingError
 import ba.grbo.weatherchecker.util.SingleSharedFlow
@@ -16,7 +17,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import retrofit2.HttpException
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -451,10 +451,7 @@ class OverviewViewModel @Inject constructor(
     @Suppress("UNUSED_PARAMETER")
     private fun notifyUserOfError(exception: Exception) {
         _exceptionSnackbarShown.value = true
-        Timber.e("original: $exception")
-        exception.suppressed.forEach {
-            Timber.e("suppressed: $it")
-        }
+        DefaultLogger.e(exception)
     }
 
     private fun onPlacesError(exception: Exception) = when (exception) {
