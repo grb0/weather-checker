@@ -61,58 +61,62 @@ abstract class Tree private constructor() : Timber.DebugTree() {
         val Timber.Forest.RELEASE_TREE: Tree
             get() = RELEASE
 
-        private val DEBUG: Tree = object : Tree() {
-            private var counter = AtomicInteger(1)
+        private val DEBUG: Tree by lazy {
+            object : Tree() {
+                private var counter = AtomicInteger(1)
 
-            override val Throwable.throwableMessages: String
-                get() {
-                    val sB = StringBuilder("$throwableMessage\n  suppressed:")
-                    suppressed.forEachIndexed { i, t ->
-                        sB.append("\n             ${i + 1}. ${t.throwableMessage}")
+                override val Throwable.throwableMessages: String
+                    get() {
+                        val sB = StringBuilder("$throwableMessage\n  suppressed:")
+                        suppressed.forEachIndexed { i, t ->
+                            sB.append("\n             ${i + 1}. ${t.throwableMessage}")
+                        }
+                        return sB.toString()
                     }
-                    return sB.toString()
+
+                override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+                    if (priority == Log.ERROR && t != null) {
+                        // Passing null as throwable since we don't want to pollute the message with
+                        // its stackTrace
+                        super.log(priority, tag, t.throwableMessages, null)
+                    } else super.log(priority, tag, message, t)
                 }
 
-            override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-                if (priority == Log.ERROR && t != null) {
-                    // Passing null as throwable since we don't want to pollute the message with
-                    // its stackTrace
-                    super.log(priority, tag, t.throwableMessages, null)
-                } else super.log(priority, tag, message, t)
+                override fun createModifiedMessage(
+                    message: String,
+                    priority: Int
+                ) = String.format(
+                    "%d. %s",
+                    counter.getAndIncrement(),
+                    super.createModifiedMessage(message, priority)
+                )
             }
-
-            override fun createModifiedMessage(
-                message: String,
-                priority: Int
-            ) = String.format(
-                "%d. %s",
-                counter.getAndIncrement(),
-                super.createModifiedMessage(message, priority)
-            )
         }
 
-        private val RELEASE: Tree = object : Tree() {
-            override val Throwable.throwableMessages: String
-                get() {
-                    val sB = StringBuilder("$throwableMessage | suppressed:")
-                    suppressed.forEachIndexed { i, t ->
-                        sB.append(" ${i + 1}. ${t.throwableMessage} |")
+        private val RELEASE: Tree by lazy {
+            object : Tree() {
+                override val Throwable.throwableMessages: String
+                    get() {
+                        val sB = StringBuilder("$throwableMessage | suppressed:")
+                        suppressed.forEachIndexed { i, t ->
+                            sB.append(" ${i + 1}. ${t.throwableMessage} |")
+                        }
+                        return sB.toString()
                     }
-                    return sB.toString()
-                }
 
-            override fun log(
-                priority: Int,
-                tag: String?,
-                message: String,
-                t: Throwable?
-            ) {
-                if (priority == Log.ERROR) t?.let {
-                    FirebaseCrashlytics.getInstance().run {
-                        // Since recordException is not taking care of possible suppressed
-                        // exceptions, we log those manually
-                        log(createModifiedMessage(t.throwableMessages, priority))
-                        recordException(t)
+                override fun log(
+                    priority: Int,
+                    tag: String?,
+                    message: String,
+                    t: Throwable?
+                ) {
+                    if (priority == Log.ERROR) t?.let {
+                        FirebaseCrashlytics.getInstance().run {
+                            // Since recordException is not taking care of possible suppressed
+                            // exceptions, we log those manually
+                            log(createModifiedMessage(t.throwableMessages, priority))
+                            recordException(t)
+                        }
                     }
                 }
             }
