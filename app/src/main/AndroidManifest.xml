@@ -14,23 +14,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WeatherChecker">
 
-        <meta-data
-            android:name="firebase_crashlytics_collection_enabled"
-            android:value="false" />
-
         <activity
             android:name=".ui.activities.WeatherCheckerActivity"
+            android:exported="true"
             android:theme="@style/Theme.SplashScreen"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
+
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
     </application>
 </manifest>
