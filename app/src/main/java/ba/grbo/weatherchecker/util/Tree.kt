@@ -28,7 +28,7 @@ abstract class Tree private constructor() : Timber.DebugTree() {
     protected val Throwable.throwableMessage: String
         get() = "${stackTrace[0].info} - ${this::class.simpleName}"
 
-    abstract protected val Throwable.throwableMessages: String
+    protected abstract val Throwable.throwableMessages: String
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         super.log(priority, tag, createModifiedMessage(message, priority), t)
@@ -66,7 +66,7 @@ abstract class Tree private constructor() : Timber.DebugTree() {
 
             override val Throwable.throwableMessages: String
                 get() {
-                    val sB = StringBuilder(throwableMessage + "\n  suppressed:")
+                    val sB = StringBuilder("$throwableMessage\n  suppressed:")
                     suppressed.forEachIndexed { i, t ->
                         sB.append("\n             ${i + 1}. ${t.throwableMessage}")
                     }
@@ -94,7 +94,7 @@ abstract class Tree private constructor() : Timber.DebugTree() {
         private val RELEASE: Tree = object : Tree() {
             override val Throwable.throwableMessages: String
                 get() {
-                    val sB = StringBuilder(throwableMessage + " | suppressed:")
+                    val sB = StringBuilder("$throwableMessage | suppressed:")
                     suppressed.forEachIndexed { i, t ->
                         sB.append(" ${i + 1}. ${t.throwableMessage} |")
                     }
