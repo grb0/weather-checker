@@ -25,4 +25,5 @@ Some screenshots:
 ![2](https://i.postimg.cc/Hs2GXbgd/Screenshot-1636528438.png)
 ![3](https://i.postimg.cc/BvPwYKd8/Screenshot-1636528609.png)
 ![4](https://i.postimg.cc/T3gDt2td/Screenshot-1636528797.png)
-![5](https://i.postimg.cc/3NtBJ8s5/Screenshot-1636528669.png)
+![5](https://i.postimg.cc/rFYBfMKP/Screenshot-1636529123.png)
+![6](https://i.postimg.cc/3NtBJ8s5/Screenshot-1636528669.png)
