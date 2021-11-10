@@ -21,9 +21,9 @@ Libraries used:
 
 Some screenshots:
 
-![1](https://i.postimg.cc/J0Cwcq04/Screenshot-1636528467.png)
-![2](https://i.postimg.cc/Hs2GXbgd/Screenshot-1636528438.png)
-![3](https://i.postimg.cc/BvPwYKd8/Screenshot-1636528609.png)
-![4](https://i.postimg.cc/T3gDt2td/Screenshot-1636528797.png)
-![5](https://i.postimg.cc/rFYBfMKP/Screenshot-1636529123.png)
-![6](https://i.postimg.cc/3NtBJ8s5/Screenshot-1636528669.png)
+![1](./screenshots/1.png)
+![2](./screenshots/2.png)
+![3](./screenshots/3.png)
+![4](./screenshots/4.png)
+![5](./screenshots/5.png)
+![6](./screenshots/6.png)
