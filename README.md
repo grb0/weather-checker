@@ -1,4 +1,4 @@
-# Weather Forecast
+# A weather forecast app
 
 A simplified weather forecast app done using Android's View system. For the updated version done using the new Android's UI toolkit Jetpack Compose visit 
 https://github.com/grb0/weather-forecast.
